@@ -1,0 +1,8 @@
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+
+# Legacy PHP app's runtime data (JSON + uploaded photos) — never committed,
+# lives only on cPanel. Should not exist in this checkout anyway.
+server-upload/data/

@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Nova SS — Asset Manager</title>
+<meta name="description" content="Nova SS Trading internal asset management system">
+<meta name="theme-color" content="#001E46">
+<link rel="icon" href="logo-icon.png">
+<link rel="apple-touch-icon" href="logo-icon.png">
+<script src="qrcode.min.js"></script>
+<style>
+:root{
+  --navy:#001E46;--navy2:#0A2E5C;--navy3:#12345F;--gold:#BE9646;--gold2:#D4B876;--gold-soft:#F5EEDD;
+  --ink:#111A26;--ink2:#2C3A4B;--muted:#64748B;--faint:#94A3B8;
+  --line:#E2E7EE;--line2:#EDF0F5;--bg:#F4F6FA;--panel:#fff;
+  --danger:#C0392B;--danger-bg:#FDECEA;--good:#1E7A46;--good-bg:#E7F4EC;--warn:#8A6D1F;
+  --r:12px;--r-sm:8px;--r-lg:16px;
+  --sh-sm:0 1px 3px rgba(16,26,38,.06),0 1px 2px rgba(16,26,38,.04);
+  --sh:0 4px 16px rgba(16,26,38,.08);
+  --sh-lg:0 12px 40px rgba(16,26,38,.14);
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  --sans:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;font-family:var(--sans);color:var(--ink);background:var(--bg);font-size:14px;line-height:1.55;min-height:100vh;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{margin:0;font-weight:700;letter-spacing:-.015em;color:var(--ink)}
+a{color:var(--navy);text-decoration:none}
+img{max-width:100%}
+
+button{font-family:inherit;font-size:13.5px;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink2);padding:9px 15px;border-radius:var(--r-sm);transition:.13s cubic-bezier(.4,0,.2,1);font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:6px;line-height:1}
+button:hover{border-color:#CBD5E1;background:#F8FAFC}
+button:active{transform:translateY(.5px)}
+button:disabled{opacity:.5;cursor:default;transform:none}
+button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+button.primary{background:var(--navy);color:#fff;border-color:var(--navy);box-shadow:var(--sh-sm)}
+button.primary:hover{background:var(--navy2);border-color:var(--navy2)}
+button.gold{background:var(--gold);color:#231600;border-color:var(--gold);box-shadow:var(--sh-sm);font-weight:700}
+button.gold:hover{background:#c9a552;border-color:#c9a552}
+button.danger{color:var(--danger);border-color:#F0C9C4;background:#fff}
+button.danger:hover{background:var(--danger-bg)}
+button.ghost{background:transparent;border-color:transparent;color:var(--muted)}
+button.ghost:hover{background:#EEF2F7;color:var(--ink)}
+button.outline{background:transparent;border-color:var(--navy);color:var(--navy)}
+button.outline:hover{background:var(--navy);color:#fff}
+button.lg{padding:13px 24px;font-size:15px;border-radius:10px}
+button.sm{padding:6px 12px;font-size:12.5px;border-radius:7px}
+button.xs{padding:4px 9px;font-size:11.5px;border-radius:6px;gap:3px}
+button.icon{padding:8px;border-radius:8px;gap:0}
+
+input,select,textarea{font-family:inherit;font-size:14px;padding:10px 12px;border:1.5px solid var(--line);border-radius:var(--r-sm);width:100%;background:var(--panel);color:var(--ink);transition:.13s border-color,box-shadow .13s}
+input::placeholder,textarea::placeholder{color:var(--faint)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,30,70,.08)}
+textarea{resize:vertical;min-height:66px}
+label.fld{display:block;margin-bottom:13px}
+label.fld>span{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px}
+
+.row{display:flex;gap:10px;align-items:center}
+.grow{flex:1}
+.muted{color:var(--muted)}
+.hidden{display:none!important}
+body.role-viewer .admin-only{display:none!important}
+
+.chip{display:inline-flex;align-items:center;font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;gap:4px;line-height:1.3}
+.chip.hw{background:#E8F0F9;color:#1F5C97}
+.chip.sw{background:#F0EAF9;color:#5A3E9B}
+.chip.active{background:var(--good-bg);color:var(--good)}
+.chip.removed{background:var(--danger-bg);color:var(--danger)}
+.chip.admin{background:#E8F0F9;color:#1F5C97}
+.chip.viewer{background:#F0EAF9;color:#5A3E9B}
+.roletag{font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;color:var(--gold2);border:1px solid rgba(190,150,70,.4);padding:2px 6px;border-radius:5px;text-transform:uppercase;font-weight:600}
+.mono{font-family:var(--mono)}
+
+/* Header */
+header{background:var(--navy);color:#fff;height:60px;display:flex;align-items:center;padding:0 18px;gap:14px;position:sticky;top:0;z-index:50;box-shadow:0 1px 0 rgba(255,255,255,.06),0 4px 20px rgba(0,0,0,.15)}
+.brand{display:flex;align-items:center;gap:11px;color:#fff}
+.brand-logo{width:40px;height:40px;border-radius:9px;background:#fff;display:flex;align-items:center;justify-content:center;padding:4px;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.brand-logo img{width:100%;height:100%;object-fit:contain}
+.brand-text{display:flex;flex-direction:column;gap:2px}
+.brand-name{font-size:15px;font-weight:800;letter-spacing:.04em;line-height:1}
+.brand-sub{font-size:9.5px;color:var(--gold2);letter-spacing:.12em;font-weight:700;line-height:1}
+.hdr-spacer{flex:1}
+.hdr-tabs{display:flex;gap:4px;background:rgba(255,255,255,.08);padding:3px;border-radius:10px}
+.hdr-tab{padding:7px 15px;border-radius:7px;font-size:13px;font-weight:600;color:#B8C5D9;cursor:pointer;border:0;background:transparent;transition:.13s}
+.hdr-tab:hover{color:#fff;background:rgba(255,255,255,.06)}
+.hdr-tab.active{background:#fff;color:var(--navy)}
+.hdr-user{display:flex;align-items:center;gap:9px;font-size:12.5px;color:#C5D2E4}
+.hdr-dot{width:7px;height:7px;border-radius:50%;background:#4ADE80;box-shadow:0 0 0 3px rgba(74,222,128,.2)}
+.hdr-email{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+
+main{max-width:1300px;margin:0 auto;padding:20px 18px 60px}
+
+/* Login */
+.login-wrap{min-height:calc(100vh - 60px);display:flex;align-items:center;justify-content:center;padding:20px}
+.login-card{background:var(--panel);border-radius:var(--r-lg);width:min(430px,100%);box-shadow:var(--sh-lg);overflow:hidden}
+.login-hero{background:linear-gradient(160deg,var(--navy) 0%,var(--navy3) 100%);padding:34px 32px 28px;text-align:center;position:relative}
+.login-hero::after{content:"";position:absolute;bottom:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--gold) 0%,var(--gold2) 100%)}
+.login-logo{width:76px;height:76px;background:#fff;border-radius:16px;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;padding:11px;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.login-logo img{width:100%;height:100%;object-fit:contain}
+.login-hero h1{color:#fff;font-size:19px;letter-spacing:.05em;font-weight:800}
+.login-hero p{color:var(--gold2);font-size:10.5px;letter-spacing:.16em;font-weight:700;margin-top:5px;text-transform:uppercase}
+.login-body{padding:30px 32px 32px}
+.login-body h2{font-size:20px;margin-bottom:6px}
+.login-lead{color:var(--muted);font-size:13.5px;margin-bottom:22px;line-height:1.55}
+.login-srv{margin-top:22px;padding-top:16px;border-top:1px solid var(--line2);text-align:center}
+button.linkbtn{background:none;border:0;color:var(--muted);font-size:12px;text-decoration:none;padding:4px;cursor:pointer;font-weight:600}
+button.linkbtn:hover{color:var(--navy);text-decoration:underline}
+
+/* Email split input */
+.email-input{display:flex;align-items:stretch;border:1.5px solid var(--line);border-radius:var(--r-sm);overflow:hidden;background:#fff;transition:.13s border-color,box-shadow .13s}
+.email-input.focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(0,30,70,.08)}
+.email-input input{border:0!important;box-shadow:none!important;flex:1;min-width:0;background:transparent;padding:10px 4px 10px 12px}
+.email-suffix{display:flex;align-items:center;padding:0 12px 0 2px;color:var(--muted);font-size:13.5px;white-space:nowrap;user-select:none;background:#F8FAFC;border-left:1px solid var(--line2);font-weight:500}
+
+/* OTP boxes */
+.otp-boxes{display:flex;gap:9px;align-items:center;justify-content:center}
+.otp-cell{width:46px;height:56px;text-align:center;font-size:24px;font-weight:800;font-family:var(--mono);border:2px solid var(--line);border-radius:11px;background:#fff;color:var(--navy);padding:0;transition:.13s;caret-color:var(--navy);flex-shrink:0}
+.otp-cell:focus{border-color:var(--navy);background:var(--gold-soft);outline:none;box-shadow:0 0 0 3px rgba(0,30,70,.1)}
+.otp-cell.filled{border-color:var(--navy);background:#F5F8FC}
+.otp-cell.error{border-color:var(--danger)!important;background:var(--danger-bg)!important;animation:shake .32s}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-5px)}40%,80%{transform:translateX(5px)}}
+.otp-sep{font-size:22px;color:var(--faint);font-weight:800;flex-shrink:0}
+@media(max-width:400px){.otp-cell{width:40px;height:50px;font-size:21px}.otp-boxes{gap:6px}}
+
+/* Toolbar */
+.toolbar{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.search-wrap{flex:1;min-width:190px;position:relative}
+.search-wrap input{padding-left:38px}
+.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--faint);pointer-events:none;font-size:15px}
+.seg{display:flex;border:1.5px solid var(--line);border-radius:var(--r-sm);overflow:hidden;background:#fff}
+.seg button{border:0;border-radius:0;background:transparent;color:var(--muted);padding:8px 13px;font-size:12.5px;font-weight:600;box-shadow:none}
+.seg button:hover{background:#F1F5F9}
+.seg button.active{background:var(--navy);color:#fff}
+.seg button.active:hover{background:var(--navy)}
+.toolbar-right{display:flex;gap:9px;align-items:center;margin-left:auto;flex-wrap:wrap}
+
+/* Cards */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh-sm);overflow:hidden}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;box-shadow:var(--sh-sm);position:relative;overflow:hidden}
+.stat::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:0 3px 3px 0}
+.stat.s-hw::before{background:var(--navy)}.stat.s-sw::before{background:#5A3E9B}
+.stat.s-rm::before{background:var(--danger)}.stat.s-emp::before{background:var(--gold)}
+.stat-n{font-size:26px;font-weight:800;line-height:1;letter-spacing:-.02em}
+.stat-l{font-size:11px;color:var(--muted);margin-top:5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.stat-n.navy{color:var(--navy)}.stat-n.purple{color:#5A3E9B}.stat-n.red{color:var(--danger)}.stat-n.gold{color:var(--gold)}
+
+/* Table */
+table{width:100%;border-collapse:collapse}
+thead th{text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:12px 16px;border-bottom:1.5px solid var(--line);background:#FBFCFE;white-space:nowrap}
+tbody td{padding:13px 16px;border-bottom:1px solid var(--line2);vertical-align:middle}
+tbody tr:last-child td{border-bottom:0}
+tbody tr{transition:background .1s}
+tbody tr:hover{background:#FBFCFE}
+tbody tr.removed{opacity:.5}
+.code-cell{font-family:var(--mono);font-weight:700;color:var(--navy);font-size:12px;letter-spacing:.01em}
+.name-cell a{font-weight:600;color:var(--ink)}
+.name-cell a:hover{color:var(--navy)}
+.name-sub{font-size:11.5px;color:var(--muted);margin-top:2px}
+.rowbtns{display:flex;gap:6px;justify-content:flex-end}
+.empty{padding:64px 20px;text-align:center;color:var(--muted)}
+.empty-icon{font-size:44px;margin-bottom:12px;opacity:.5}
+
+/* Avatar */
+.avatar{width:34px;height:34px;border-radius:50%;object-fit:cover;background:var(--navy);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;overflow:hidden}
+.avatar.lg{width:56px;height:56px;font-size:20px}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.emp-row{display:flex;align-items:center;gap:11px}
+
+/* Pagination */
+.pager{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;flex-wrap:wrap}
+.pager-info{font-size:12.5px;color:var(--muted)}
+.pager-ctrl{display:flex;align-items:center;gap:6px}
+.pager-ctrl select{width:auto;padding:6px 8px;font-size:12.5px}
+.page-btn{min-width:34px;padding:7px 10px;font-size:13px;border-radius:7px}
+.page-btn.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+
+/* Overlay/drawer/modal */
+.scrim{position:fixed;inset:0;background:rgba(10,20,35,.5);backdrop-filter:blur(2px);z-index:60;display:flex;justify-content:flex-end;animation:fade .15s}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.drawer{width:min(600px,100%);height:100%;background:var(--panel);overflow-y:auto;display:flex;flex-direction:column;box-shadow:-8px 0 40px rgba(0,0,0,.18);animation:slideIn .2s cubic-bezier(.16,1,.3,1)}
+@keyframes slideIn{from{transform:translateX(30px);opacity:.6}to{transform:none;opacity:1}}
+.drawer-head{position:sticky;top:0;background:var(--panel);border-bottom:1px solid var(--line);padding:16px 20px;display:flex;align-items:center;gap:10px;z-index:2;flex-shrink:0}
+.drawer-body{padding:22px 20px;flex:1}
+.scrim.center{justify-content:center;align-items:center;padding:16px}
+.modal{width:min(560px,100%);background:var(--panel);border-radius:var(--r-lg);max-height:92vh;overflow-y:auto;box-shadow:var(--sh-lg);animation:pop .18s cubic-bezier(.16,1,.3,1)}
+@keyframes pop{from{transform:scale(.95);opacity:.6}to{transform:none;opacity:1}}
+.modal-head{padding:18px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;position:sticky;top:0;background:var(--panel);z-index:2}
+.modal-body{padding:22px}
+.modal-foot{padding:15px 22px;border-top:1px solid var(--line);display:flex;gap:9px;justify-content:flex-end;position:sticky;bottom:0;background:var(--panel)}
+.form2{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+.form2 .full{grid-column:1/-1}
+
+.kv{display:grid;grid-template-columns:120px 1fr;gap:8px 14px;font-size:13.5px;margin:16px 0}
+.kv dt{color:var(--muted);font-weight:500}
+.kv dd{margin:0;word-break:break-word;color:var(--ink2)}
+.section{margin-top:24px}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+
+/* Gallery */
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:9px}
+.ph-item{position:relative;border-radius:10px;overflow:hidden;aspect-ratio:1;background:#F1F5F9;border:1px solid var(--line);cursor:pointer}
+.ph-item img{width:100%;height:100%;object-fit:cover;display:block}
+.ph-item.del img{filter:grayscale(1);opacity:.4}
+.ph-ov{position:absolute;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;gap:5px;opacity:0;transition:.15s}
+.ph-item:hover .ph-ov{opacity:1}
+.del-badge{position:absolute;top:5px;left:5px;font-size:9px;background:var(--danger);color:#fff;padding:2px 6px;border-radius:4px;font-weight:600}
+.pdf-icon{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:6px;color:var(--muted);font-size:10.5px;font-weight:600;padding:6px;text-align:center}
+.pdf-icon .ic{font-size:30px}
+
+.tl{list-style:none;padding:0;margin:0}
+.tl li{padding:11px 0;border-bottom:1px solid var(--line2);font-size:13.5px}
+.tl li:last-child{border-bottom:0}
+.tl-when{font-size:11.5px;color:var(--muted);margin-top:3px}
+
+.toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 20px;border-radius:11px;font-size:13.5px;z-index:99;box-shadow:0 10px 34px rgba(0,0,0,.28);animation:toastIn .22s;max-width:90vw;text-align:center;font-weight:500}
+.toast.err{background:var(--danger)}.toast.ok{background:var(--good)}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(12px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+/* Sticker preview (on-screen, downloadable) */
+.sticker-preview{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;padding:8px 0}
+.sticker-card{display:flex;flex-direction:column;align-items:center;gap:8px}
+.sticker-canvas{border:1px solid var(--line);border-radius:8px;box-shadow:var(--sh-sm)}
+
+@media(max-width:720px){
+  main{padding:16px 12px 70px}
+  .stats{grid-template-columns:repeat(2,1fr);gap:10px}
+  .stat{padding:13px}
+  .stat-n{font-size:22px}
+  .hdr-tabs{position:fixed;bottom:0;left:0;right:0;top:auto;background:var(--panel);border-top:1px solid var(--line);border-radius:0;padding:6px;z-index:40;justify-content:space-around;box-shadow:0 -2px 12px rgba(0,0,0,.08)}
+  .hdr-tab{flex:1;justify-content:center;color:var(--muted)}
+  .hdr-tab.active{background:var(--navy);color:#fff}
+  .hide-sm{display:none}
+  .form2{grid-template-columns:1fr}.form2 .full{grid-column:1}
+  .kv{grid-template-columns:96px 1fr}
+  .hdr-email{display:none}
+  .toolbar-right{width:100%}
+}
+#splash{position:fixed;inset:0;background:var(--bg);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+#splash .splash-logo{width:64px;height:64px;border-radius:14px;background:var(--navy);padding:9px;box-shadow:var(--sh)}
+#splash .splash-logo img{width:100%;height:100%;object-fit:contain}
+#splash .spin{width:26px;height:26px;border:3px solid var(--line);border-top-color:var(--navy);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+body.booting header,body.booting main{visibility:hidden}
+</style>
+</head>
+<body class="booting">
+<div id="splash"><div class="splash-logo"><img src="logo-icon.png" alt=""></div><div class="spin"></div></div>
+<header>
+  <div class="brand">
+    <div class="brand-logo"><img src="logo-icon.png" alt="Nova SS"></div>
+    <div class="brand-text"><div class="brand-name">NOVA SS</div><div class="brand-sub">ASSET MANAGER</div></div>
+  </div>
+  <div class="hdr-spacer"></div>
+  <div class="hdr-tabs hidden" id="hdrTabs">
+    <button class="hdr-tab active" data-tab="assets" onclick="switchTab('assets')">📦 Assets</button>
+    <button class="hdr-tab" data-tab="employees" onclick="switchTab('employees')">👤 Employees</button>
+  </div>
+  <div class="hdr-spacer hide-sm"></div>
+  <div class="hdr-user hidden" id="userPill">
+    <div class="hdr-dot"></div><div class="hdr-email" id="userEmail"></div>
+    <span class="roletag" id="userRole"></span>
+  </div>
+  <button class="sm ghost hidden" id="logoutBtn" onclick="logout()" style="color:#C5D2E4">Sign out</button>
+</header>
+
+<main>
+<!-- LOGIN -->
+<div id="loginArea">
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-hero">
+        <div class="login-logo"><img src="logo-icon.png" alt="Nova SS Trading"></div>
+        <h1>NOVA SS TRADING</h1><p>Asset Manager</p>
+      </div>
+      <div class="login-body">
+        <h2>Sign in</h2>
+        <p class="login-lead">Authorized staff only. We'll email you a one-time sign-in code.</p>
+        <div id="stepEmail">
+          <label class="fld"><span>Work email</span>
+            <div class="email-input" id="emailWrap">
+              <input id="loginEmail" type="text" autocomplete="username" autocapitalize="off" spellcheck="false"
+                     placeholder="yourname" maxlength="40"
+                     oninput="this.value=this.value.replace(/[@\s]/g,'').toLowerCase()"
+                     onfocus="document.getElementById('emailWrap').classList.add('focus')"
+                     onblur="document.getElementById('emailWrap').classList.remove('focus')"
+                     onkeydown="if(event.key==='Enter')requestCode()">
+              <div class="email-suffix">@novasstrading.com</div>
+            </div>
+          </label>
+          <div style="text-align:center"><button class="primary lg" style="min-width:220px" onclick="requestCode()">Send sign-in code</button></div>
+        </div>
+        <div id="stepCode" class="hidden">
+          <div style="background:var(--gold-soft);border-radius:10px;padding:12px 15px;margin-bottom:18px;font-size:13px;color:var(--ink2)">
+            Code sent to <b id="sentTo"></b>
+          </div>
+          <label class="fld"><span>6-digit code from email</span>
+            <div class="otp-boxes" id="otpBoxes">
+              <input class="otp-cell" maxlength="1" inputmode="numeric">
+              <input class="otp-cell" maxlength="1" inputmode="numeric">
+              <input class="otp-cell" maxlength="1" inputmode="numeric">
+              <div class="otp-sep">·</div>
+              <input class="otp-cell" maxlength="1" inputmode="numeric">
+              <input class="otp-cell" maxlength="1" inputmode="numeric">
+              <input class="otp-cell" maxlength="1" inputmode="numeric">
+            </div>
+          </label>
+          <div style="text-align:center;margin-bottom:12px"><button class="primary lg" style="min-width:220px" id="verifyBtn" onclick="verifyCode()">Verify &amp; sign in</button></div>
+          <div class="row" style="justify-content:space-between">
+            <button class="linkbtn" onclick="backToEmail()">← Different email</button>
+            <button class="linkbtn" id="resendBtn" onclick="requestCode(true)">Resend code</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ASSETS TAB -->
+<div id="appArea" class="hidden">
+  <div class="stats">
+    <div class="stat s-hw"><div class="stat-n navy" id="sHW">—</div><div class="stat-l">Hardware</div></div>
+    <div class="stat s-sw"><div class="stat-n purple" id="sSW">—</div><div class="stat-l">Software</div></div>
+    <div class="stat s-rm"><div class="stat-n red" id="sRM">—</div><div class="stat-l">Removed</div></div>
+    <div class="stat s-emp"><div class="stat-n gold" id="sEMP">—</div><div class="stat-l">Employees</div></div>
+  </div>
+  <div class="toolbar">
+    <div class="search-wrap grow"><span class="search-icon">🔍</span>
+      <input id="search" placeholder="Search code, name, serial, holder…" oninput="page=1;render()"></div>
+    <select id="fCat" style="width:auto;min-width:140px" onchange="page=1;render()"><option value="">All categories</option></select>
+    <div class="seg" id="fType">
+      <button data-v="" class="active" onclick="setSeg('fType',this)">All</button>
+      <button data-v="hardware" onclick="setSeg('fType',this)">HW</button>
+      <button data-v="software" onclick="setSeg('fType',this)">SW</button>
+    </div>
+    <div class="seg" id="fStatus">
+      <button data-v="active" class="active" onclick="setSeg('fStatus',this)">Active</button>
+      <button data-v="removed" onclick="setSeg('fStatus',this)">Removed</button>
+      <button data-v="" onclick="setSeg('fStatus',this)">All</button>
+    </div>
+    <div class="toolbar-right">
+      <button class="ghost sm hide-sm" onclick="exportCSV()">↓ CSV</button>
+      <button class="outline sm admin-only" onclick="openUsers()">🔑 Access</button>
+      <button class="gold admin-only" onclick="openForm()">+ Add asset</button>
+    </div>
+  </div>
+  <div class="card">
+    <table>
+      <thead><tr>
+        <th style="width:38px"><input type="checkbox" id="selAll" onclick="toggleAll(this)"></th>
+        <th>Code</th><th>Item</th><th class="hide-sm">Category</th>
+        <th class="hide-sm">Holder</th><th class="hide-sm">Location</th>
+        <th>Status</th><th style="text-align:right">Actions</th>
+      </tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div class="empty hidden" id="emptyState"><div class="empty-icon">📦</div><div>No assets match. Try different filters, or add one.</div></div>
+  </div>
+  <div class="pager">
+    <div class="pager-ctrl">
+      <span class="pager-info">Rows:</span>
+      <select id="pageSize" onchange="page=1;render()"><option>15</option><option>30</option><option>50</option><option>100</option></select>
+      <button class="ghost sm admin-only" onclick="printSelected()" style="margin-left:8px">🏷️ Stickers for selected</button>
+    </div>
+    <div class="pager-ctrl" id="pageNav"></div>
+  </div>
+</div>
+
+<!-- EMPLOYEES TAB -->
+<div id="empArea" class="hidden">
+  <div class="toolbar">
+    <div class="search-wrap grow"><span class="search-icon">🔍</span>
+      <input id="empSearch" placeholder="Search employees…" oninput="renderEmployees()"></div>
+    <div class="toolbar-right">
+      <button class="gold admin-only" onclick="openEmpForm()">+ Add employee</button>
+    </div>
+  </div>
+  <div class="card">
+    <table>
+      <thead><tr><th>Employee</th><th class="hide-sm">Designation</th><th class="hide-sm">Contact</th><th>Email</th><th style="text-align:right">Actions</th></tr></thead>
+      <tbody id="empRows"></tbody>
+    </table>
+    <div class="empty hidden" id="empEmpty"><div class="empty-icon">👤</div><div>No employees yet. Add your team members here.</div></div>
+  </div>
+</div>
+</main>
+
+<div id="overlay"></div>
+
+<script>
+// ── Storage / crypto ──────────────────────────────────────────────────────────
+const St={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+const APP_KEY='nova-ss-asset-v3';
+async function _key(){const e=new TextEncoder(),b=await crypto.subtle.importKey('raw',e.encode(APP_KEY),'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt:e.encode('nova-ss-iv'),iterations:1e5,hash:'SHA-256'},b,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);}
+async function encSave(o){try{const k=await _key(),iv=crypto.getRandomValues(new Uint8Array(12));
+  const c=await crypto.subtle.encrypt({name:'AES-GCM',iv},k,new TextEncoder().encode(JSON.stringify(o)));
+  St.set('nova_auth',btoa(String.fromCharCode(...iv,...new Uint8Array(c))));St.set('nova_auth_p','');}
+  catch(e){try{St.set('nova_auth_p',JSON.stringify(o))}catch(_){}}}
+async function decLoad(){try{const p=St.get('nova_auth');if(p){const r=Uint8Array.from(atob(p),c=>c.charCodeAt(0));
+  const k=await _key(),d=await crypto.subtle.decrypt({name:'AES-GCM',iv:r.slice(0,12)},k,r.slice(12));
+  return JSON.parse(new TextDecoder().decode(d));}const q=St.get('nova_auth_p');return q?JSON.parse(q):null;}catch(e){return null}}
+function clearAuth(){St.set('nova_auth','');St.set('nova_auth_p','');}
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let API_BASE=St.get('nova_api')||'https://assets.novasstrading.com/api.php';
+let SESSION='',LOGIN_EMAIL='',ROLE='';
+let ASSETS=[],CATS={},SW=[],EMPLOYEES=[];
+let page=1,curTab='assets';
+
+// ── API ───────────────────────────────────────────────────────────────────────
+async function api(action,{params={},json=null,form=null}={}){
+  const url=new URL(API_BASE);url.searchParams.set('action',action);
+  Object.entries(params).forEach(([k,v])=>url.searchParams.set(k,v));
+  const opt={method:'GET',headers:{}};
+  if(SESSION)opt.headers['X-Session']=SESSION;
+  if(json){opt.headers['Content-Type']='application/json';opt.body=JSON.stringify({action,...json});opt.method='POST';}
+  if(form){opt.body=form;opt.method='POST';}
+  const r=await fetch(url,opt);
+  const ct=r.headers.get('content-type')||'';
+  if(!ct.includes('json'))throw new Error('Server did not return data. Please try again shortly.');
+  const d=await r.json();
+  if(!d.ok)throw new Error(d.error||'Request failed');
+  return d;
+}
+
+// ── Login ─────────────────────────────────────────────────────────────────────
+async function requestCode(isResend){
+  const local=(document.getElementById('loginEmail').value||'').trim().replace(/[@\s]/g,'');
+  const email=local?local+'@novasstrading.com':LOGIN_EMAIL;
+  if(!email)return toast('Enter your name before the @.',true);
+  LOGIN_EMAIL=email;document.getElementById('sentTo').textContent=email;
+  try{
+    const d=await api('request_code',{json:{email}});
+    document.getElementById('stepEmail').classList.add('hidden');
+    document.getElementById('stepCode').classList.remove('hidden');
+    initOTP();document.querySelector('.otp-cell').focus();startResend();
+    toast(isResend?'New code sent.':(d.message||'Code sent!'));
+  }catch(e){toast(e.message,true)}
+}
+function backToEmail(){
+  document.getElementById('stepCode').classList.add('hidden');
+  document.getElementById('stepEmail').classList.remove('hidden');
+  document.querySelectorAll('.otp-cell').forEach(c=>{c.value='';c.classList.remove('filled','error');});
+}
+async function verifyCode(){
+  const code=[...document.querySelectorAll('.otp-cell')].map(i=>i.value).join('');
+  if(code.length<6)return toast('Enter all 6 digits.',true);
+  try{
+    const d=await api('verify_code',{json:{email:LOGIN_EMAIL,code}});
+    SESSION=d.session;LOGIN_EMAIL=d.email;ROLE=d.role||'viewer';
+    await encSave({session:d.session,email:d.email});
+    showApp();await refresh();toast('Signed in!','ok');
+  }catch(e){
+    document.querySelectorAll('.otp-cell').forEach(c=>c.classList.add('error'));
+    setTimeout(()=>document.querySelectorAll('.otp-cell').forEach(c=>c.classList.remove('error')),650);
+    toast(e.message,true);
+  }
+}
+function initOTP(){
+  const cells=[...document.querySelectorAll('.otp-cell')];
+  cells.forEach((cell,i)=>{
+    cell.oninput=()=>{let v=cell.value.replace(/[^0-9]/g,'');cell.value=v?v[v.length-1]:'';
+      cell.classList.toggle('filled',!!cell.value);
+      if(cell.value&&i<cells.length-1)cells[i+1].focus();
+      if(cells.every(c=>c.value))document.getElementById('verifyBtn').focus();};
+    cell.onkeydown=e=>{
+      if(e.key==='Backspace'){e.preventDefault();
+        if(cell.value){cell.value='';cell.classList.remove('filled');}
+        else if(i>0){cells[i-1].value='';cells[i-1].classList.remove('filled');cells[i-1].focus();}}
+      else if(e.key==='ArrowLeft'&&i>0){e.preventDefault();cells[i-1].focus();}
+      else if(e.key==='ArrowRight'&&i<cells.length-1){e.preventDefault();cells[i+1].focus();}
+      else if(e.key==='Enter')verifyCode();};
+    cell.onpaste=e=>{e.preventDefault();
+      const t=(e.clipboardData||window.clipboardData).getData('text').replace(/[^0-9]/g,'');
+      t.split('').slice(0,6).forEach((ch,j)=>{if(cells[i+j]){cells[i+j].value=ch;cells[i+j].classList.add('filled');}});
+      cells[Math.min(i+t.length,cells.length-1)].focus();};
+    cell.onfocus=()=>cell.select();
+  });
+}
+let _cool=null;
+function startResend(){const b=document.getElementById('resendBtn');let s=60;b.disabled=true;b.textContent='Resend in 60s';
+  clearInterval(_cool);_cool=setInterval(()=>{s--;b.textContent=s>0?`Resend in ${s}s`:'Resend code';if(s<=0){b.disabled=false;clearInterval(_cool);}},1000);}
+async function logout(){try{await api('logout')}catch(e){}clearAuth();SESSION='';ROLE='';LOGIN_EMAIL='';backToEmail();showLogin();}
+function showApp(){
+  document.getElementById('loginArea').classList.add('hidden');
+  document.getElementById('appArea').classList.remove('hidden');
+  document.getElementById('hdrTabs').classList.remove('hidden');
+  document.getElementById('userPill').classList.remove('hidden');
+  document.getElementById('logoutBtn').classList.remove('hidden');
+  document.getElementById('userEmail').textContent=LOGIN_EMAIL;
+  applyRole();
+  const t=(location.hash.replace('#/','')||'assets');
+  switchTab(t==='employees'?'employees':'assets');
+}
+function showLogin(){
+  ['appArea','empArea','hdrTabs','userPill','logoutBtn'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  document.getElementById('loginArea').classList.remove('hidden');
+}
+function applyRole(){document.body.classList.toggle('role-viewer',ROLE!=='admin');document.getElementById('userRole').textContent=ROLE||'';}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+function switchTab(t,skipHash){
+  curTab=t;
+  document.querySelectorAll('.hdr-tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));
+  document.getElementById('appArea').classList.toggle('hidden',t!=='assets');
+  document.getElementById('empArea').classList.toggle('hidden',t!=='employees');
+  document.title=(t==='employees'?'Employees':'Assets')+' — Nova SS Asset Manager';
+  if(!skipHash&&location.hash.replace('#/','')!==t)history.pushState(null,'','#/'+t);
+  if(t==='employees')renderEmployees();
+}
+window.addEventListener('popstate',()=>{
+  const t=(location.hash.replace('#/','')||'assets');
+  if(t==='employees'||t==='assets')switchTab(t,true);
+});
+
+// ── Data ──────────────────────────────────────────────────────────────────────
+async function refresh(){
+  const d=await api('list');
+  ASSETS=d.assets||[];CATS=d.categories||{};SW=d.software||[];
+  if(d.role){ROLE=d.role;applyRole();}
+  try{EMPLOYEES=(await api('list_employees')).employees||[];}catch(e){EMPLOYEES=[];}
+  fillCats();updateStats();render();
+}
+function updateStats(){
+  document.getElementById('sHW').textContent=ASSETS.filter(a=>a.type==='hardware'&&a.status==='active').length;
+  document.getElementById('sSW').textContent=ASSETS.filter(a=>a.type==='software'&&a.status==='active').length;
+  document.getElementById('sRM').textContent=ASSETS.filter(a=>a.status==='removed').length;
+  document.getElementById('sEMP').textContent=EMPLOYEES.length;
+}
+function fillCats(){
+  const sel=document.getElementById('fCat'),prev=sel.value,all=[...Object.keys(CATS),...SW];
+  sel.innerHTML='<option value="">All categories</option>'+all.map(c=>`<option>${esc(c)}</option>`).join('');
+  if(prev)sel.value=prev;
+}
+function empName(id){if(!id)return '';const e=EMPLOYEES.find(x=>x.id===id);return e?e.name:id;}
+
+// ── Filters + render (with pagination) ────────────────────────────────────────
+function setSeg(id,btn){[...document.getElementById(id).children].forEach(b=>b.classList.remove('active'));btn.classList.add('active');page=1;render();}
+function segVal(id){const el=document.getElementById(id);return el?(el.querySelector('.active')?.dataset.v??''):'';}
+function currentList(){
+  const q=(document.getElementById('search')?.value||'').toLowerCase().trim();
+  const cat=document.getElementById('fCat')?.value||'',type=segVal('fType'),st=segVal('fStatus');
+  return ASSETS.filter(a=>{
+    if(type&&a.type!==type)return false;
+    if(st&&a.status!==st)return false;
+    if(cat&&a.category!==cat)return false;
+    if(q){const hay=[a.code,a.name,a.serial,a.brand_model,a.assigned_to,empName(a.employee_id),a.location,a.category,a.specs].join(' ').toLowerCase();if(!hay.includes(q))return false;}
+    return true;
+  });
+}
+function holderLabel(a){
+  if(a.employee_id){const e=EMPLOYEES.find(x=>x.id===a.employee_id);if(e)return esc(e.name);}
+  if(a.assigned_to)return esc(a.assigned_to);
+  return '<span class="chip" style="background:#EEF2F7;color:var(--muted)">Office</span>';
+}
+function render(){
+  const list=currentList();
+  const size=parseInt(document.getElementById('pageSize').value)||15;
+  const pages=Math.max(1,Math.ceil(list.length/size));
+  if(page>pages)page=pages;
+  const start=(page-1)*size,slice=list.slice(start,start+size);
+  document.getElementById('rows').innerHTML=slice.map(a=>`
+    <tr class="${a.status==='removed'?'removed':''}">
+      <td><input type="checkbox" class="sel" data-id="${a.id}" ${a.code?'':'disabled'}></td>
+      <td><span class="code-cell">${a.code?esc(a.code):'<span class="muted">—</span>'}</span></td>
+      <td class="name-cell"><a href="#" onclick="openDetail('${a.id}');return false">${esc(a.name)}</a>
+        ${a.brand_model?`<div class="name-sub">${esc(a.brand_model)}</div>`:''}</td>
+      <td class="hide-sm"><span class="chip ${a.type==='software'?'sw':'hw'}">${esc(a.category)}</span></td>
+      <td class="hide-sm">${holderLabel(a)}</td>
+      <td class="hide-sm">${esc(a.location)||'<span class="muted">—</span>'}</td>
+      <td><span class="chip ${a.status}">${a.status}</span></td>
+      <td><div class="rowbtns">
+        <button class="xs ghost" onclick="openDetail('${a.id}')">View</button>
+        ${a.code?`<button class="xs gold admin-only" onclick="openStickerDialog('${a.id}')">🏷️</button>`:''}
+      </div></td>
+    </tr>`).join('');
+  document.getElementById('emptyState').classList.toggle('hidden',list.length>0);
+  // pager
+  const nav=document.getElementById('pageNav');
+  let btns=`<span class="pager-info">${list.length?start+1:0}–${Math.min(start+size,list.length)} of ${list.length}</span>`;
+  if(pages>1){
+    btns+=`<button class="page-btn" ${page<=1?'disabled':''} onclick="page--;render()">‹</button>`;
+    const win=[];for(let p=Math.max(1,page-1);p<=Math.min(pages,page+1);p++)win.push(p);
+    if(win[0]>1){btns+=`<button class="page-btn" onclick="page=1;render()">1</button>`;if(win[0]>2)btns+=`<span class="muted">…</span>`;}
+    win.forEach(p=>btns+=`<button class="page-btn ${p===page?'active':''}" onclick="page=${p};render()">${p}</button>`);
+    if(win[win.length-1]<pages){if(win[win.length-1]<pages-1)btns+=`<span class="muted">…</span>`;btns+=`<button class="page-btn" onclick="page=${pages};render()">${pages}</button>`;}
+    btns+=`<button class="page-btn" ${page>=pages?'disabled':''} onclick="page++;render()">›</button>`;
+  }
+  nav.innerHTML=btns;
+}
+function toggleAll(cb){document.querySelectorAll('.sel:not(:disabled)').forEach(x=>x.checked=cb.checked)}
+
+// ── Employee select options ───────────────────────────────────────────────────
+function empOptions(sel){
+  return `<option value="">🏢 Office (unassigned)</option>`+
+    EMPLOYEES.map(e=>`<option value="${e.id}" ${sel===e.id?'selected':''}>${esc(e.name)}${e.designation?' — '+esc(e.designation):''}</option>`).join('');
+}
+
+// ── Add / edit asset ──────────────────────────────────────────────────────────
+function openForm(asset=null){
+  const isEdit=!!asset;
+  const catOpts=`<optgroup label="Hardware">${Object.keys(CATS).map(c=>opt(c,asset)).join('')}</optgroup>
+                 <optgroup label="Software">${SW.map(c=>opt(c,asset)).join('')}</optgroup>`;
+  overlay(`<div class="scrim center" onclick="if(event.target===this)closeOverlay()"><div class="modal">
+    <div class="modal-head"><h3>${isEdit?'Edit asset':'Add new asset'}</h3><div class="grow"></div><button class="ghost icon" onclick="closeOverlay()">✕</button></div>
+    <div class="modal-body">
+      ${isEdit?`<div class="row" style="gap:8px;margin-bottom:16px;flex-wrap:wrap">
+        ${asset.code?`<span class="code-cell" style="font-size:15px">${esc(asset.code)}</span>`:''}
+        <span class="chip ${asset.type==='software'?'sw':'hw'}">${esc(asset.category)}</span>
+        <span class="muted" style="font-size:12px">Code &amp; category locked after creation</span></div>`:''}
+      <div class="form2">
+        ${isEdit?'':`<label class="fld full"><span>Category *</span><select id="f_category">${catOpts}</select></label>`}
+        <label class="fld full"><span>Name / title *</span><input id="f_name" value="${esc(asset?.name||'')}" placeholder="e.g. Dell Latitude 5420"></label>
+        <label class="fld"><span>Brand / model</span><input id="f_brand_model" value="${esc(asset?.brand_model||'')}"></label>
+        <label class="fld"><span>Serial no.</span><input id="f_serial" value="${esc(asset?.serial||'')}"></label>
+        <label class="fld full"><span>Specs / plan details</span><input id="f_specs" value="${esc(asset?.specs||'')}" placeholder="RAM, storage, licence key…"></label>
+        <label class="fld"><span>Vendor</span><input id="f_vendor" value="${esc(asset?.vendor||'')}"></label>
+        <label class="fld"><span>Purchase date</span><input id="f_purchase_date" type="date" value="${esc(asset?.purchase_date||'')}"></label>
+        <label class="fld"><span>Value / cost</span>
+          <div class="row" style="gap:6px">
+            <input id="f_value_amount" value="${esc(asset?.value_amount||'')}" placeholder="0" style="flex:1.2">
+            <select id="f_value_currency" style="flex:.7">
+              <option value="BDT" ${!asset||asset?.value_currency==='BDT'?'selected':''}>BDT</option>
+              <option value="USD" ${asset?.value_currency==='USD'?'selected':''}>USD</option>
+            </select>
+            <select id="f_value_type" style="flex:1">
+              <option value="one_time" ${!asset||asset?.value_type==='one_time'?'selected':''}>One-time</option>
+              <option value="monthly" ${asset?.value_type==='monthly'?'selected':''}>Monthly</option>
+              <option value="yearly" ${asset?.value_type==='yearly'?'selected':''}>Yearly</option>
+            </select>
+          </div></label>
+        <label class="fld full"><span>Assigned to</span><select id="f_employee_id">${empOptions(asset?.employee_id)}</select></label>
+        <label class="fld full"><span>Location</span><input id="f_location" value="${esc(asset?.location||'')}" placeholder="Baridhara office…"></label>
+        <label class="fld full"><span>Notes</span><textarea id="f_notes">${esc(asset?.notes||'')}</textarea></label>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="ghost" onclick="closeOverlay()">Cancel</button>
+      <button class="primary" onclick="saveForm('${isEdit?asset.id:''}')">${isEdit?'Save changes':'Create asset'}</button></div>
+  </div></div>`);
+}
+function opt(c,a){return `<option ${a&&a.category===c?'selected':''}>${esc(c)}</option>`}
+async function saveForm(id){
+  const fv=k=>document.getElementById('f_'+k)?.value.trim()||'';
+  const p={name:fv('name'),brand_model:fv('brand_model'),serial:fv('serial'),specs:fv('specs'),vendor:fv('vendor'),
+    purchase_date:fv('purchase_date'),value_amount:fv('value_amount'),value_currency:fv('value_currency'),value_type:fv('value_type'),employee_id:fv('employee_id'),location:fv('location'),notes:fv('notes')};
+  if(!p.name)return toast('Name is required.',true);
+  try{
+    if(id)await api('update',{json:{id,...p}});
+    else{p.category=fv('category');if(!p.category)return toast('Pick a category.',true);
+      const d=await api('add',{json:p});toast(d.asset.code?`Created — ${d.asset.code}`:'Created.','ok');}
+    if(id)toast('Saved.','ok');
+    closeOverlay();await refresh();
+  }catch(e){toast(e.message,true)}
+}
+
+// ── Detail drawer ─────────────────────────────────────────────────────────────
+let _curAsset=null,_showDel=false;
+async function openDetail(id){
+  let a;try{a=(await api('get',{params:{id}})).asset}catch(e){return toast(e.message,true)}
+  _curAsset=a;_showDel=false;
+  let hist=[];try{if(a.code)hist=(await api('transfers',{params:{code:a.code}})).transfers}catch(e){}
+  const kv=(l,v)=>v?`<dt>${l}</dt><dd>${v}</dd>`:'';
+  const holder=a.employee_id?empName(a.employee_id):(a.assigned_to||'Office');
+  overlay(`<div class="scrim" onclick="if(event.target===this)closeOverlay()"><div class="drawer">
+    <div class="drawer-head">
+      ${a.code?`<span class="code-cell" style="font-size:15px">${esc(a.code)}</span>`:''}
+      <span class="chip ${a.type==='software'?'sw':'hw'}">${esc(a.category)}</span>
+      <div class="grow"></div><span class="chip ${a.status}">${a.status}</span>
+      <button class="ghost icon" onclick="closeOverlay()">✕</button>
+    </div>
+    <div class="drawer-body">
+      <h2 style="font-size:21px">${esc(a.name)}</h2>
+      ${a.brand_model?`<div class="muted" style="margin-top:3px">${esc(a.brand_model)}</div>`:''}
+      <div class="row" style="margin-top:16px;flex-wrap:wrap;gap:8px">
+        <button class="primary sm admin-only" onclick='openForm(${escJ(a)})'>✏️ Edit</button>
+        ${a.code?`<button class="gold sm admin-only" onclick="openStickerDialog('${a.id}')">🏷️ Sticker</button>`:''}
+        <button class="outline sm admin-only" onclick="openTransfer('${a.id}')">↔ Transfer</button>
+        ${a.status==='active'?`<button class="danger sm admin-only" onclick="removeAsset('${a.id}',false)">Remove</button>`
+          :`<button class="sm admin-only" onclick="removeAsset('${a.id}',true)">Restore</button>`}
+      </div>
+      <dl class="kv" style="margin-top:18px">
+        ${kv('Serial',esc(a.serial))}${kv('Specs',esc(a.specs))}${kv('Vendor',esc(a.vendor))}
+        ${kv('Purchased',esc(a.purchase_date))}
+        ${a.value_amount?`<dt>Value</dt><dd>${esc(a.value_amount)} ${esc(a.value_currency||'BDT')}${a.value_type&&a.value_type!=='one_time'?` <span class="chip" style="background:#EEF2F7;color:var(--muted)">${a.value_type}</span>`:''}</dd>`:''}
+        <dt>Assigned to</dt><dd>${esc(holder)}</dd>
+        ${kv('Location',esc(a.location))}${kv('Notes',esc(a.notes))}
+        <dt>Added</dt><dd>${fmt(a.created_at)}</dd>
+      </dl>
+      <div class="section">
+        <div class="section-head"><div class="section-title">Photos</div>
+          <div class="row admin-only" style="gap:6px">
+            <button class="xs ghost" onclick="toggleDel(this)">Show deleted</button>
+            <label class="xs primary" style="cursor:pointer">+ Photo<input type="file" accept="image/*" style="display:none" onchange="uploadPhoto('${a.id}',this)"></label>
+          </div></div>
+        <div class="gallery" id="gallery"></div>
+      </div>
+      <div class="section">
+        <div class="section-head"><div class="section-title">Documents / Invoices</div>
+          <label class="xs primary admin-only" style="cursor:pointer">+ PDF / Image<input type="file" accept=".pdf,image/*" style="display:none" onchange="uploadDoc('${a.id}',this)"></label></div>
+        <div class="gallery" id="docGallery"></div>
+      </div>
+      <div class="section">
+        <div class="section-title" style="margin-bottom:10px">Transfer history</div>
+        ${hist.length?`<ul class="tl">${hist.slice().reverse().map(t=>`
+          <li><b>${esc(t.from)||'Office'}</b> → <b>${esc(t.to)||'Office'}</b>${t.to_location?`<span class="muted"> · ${esc(t.to_location)}</span>`:''}
+          <div class="tl-when">${fmt(t.date)}${t.by?' · by '+esc(t.by):''}${t.notes?' · '+esc(t.notes):''}</div></li>`).join('')}</ul>`
+          :'<div class="muted">No transfers recorded.</div>'}
+      </div>
+    </div></div></div>`);
+  loadGallery(a,false);loadDocs(a);
+}
+function toggleDel(b){_showDel=!_showDel;b.textContent=_showDel?'Hide deleted':'Show deleted';loadGallery(_curAsset,_showDel);}
+async function loadGallery(a,showDel){
+  _curAsset=a;const g=document.getElementById('gallery');if(!g)return;
+  const photos=(a.photos||[]).filter(p=>showDel||!p.deleted);
+  if(!photos.length){g.innerHTML='<div class="muted" style="font-size:13px">No photos yet.</div>';return;}
+  g.innerHTML=photos.map(p=>`<div class="ph-item${p.deleted?' del':''}" id="ph_${p.file}">
+    ${p.deleted?'<span class="del-badge">deleted</span>':''}
+    <div class="ph-ov">${p.deleted?`<button class="xs" onclick="actPhoto('${a.id}','${p.file}','restore')">Restore</button>`
+      :`<button class="xs danger" onclick="actPhoto('${a.id}','${p.file}','delete')">Delete</button>`}</div></div>`).join('');
+  for(const p of photos){try{
+    const url=new URL(API_BASE);url.searchParams.set('action','photo');url.searchParams.set('id',a.id);url.searchParams.set('file',p.file);
+    const r=await fetch(url,{headers:{'X-Session':SESSION}});const o=URL.createObjectURL(await r.blob());
+    const el=document.getElementById('ph_'+p.file);if(el)el.insertAdjacentHTML('afterbegin',`<img src="${o}" loading="lazy">`);
+  }catch(e){}}
+}
+async function loadDocs(a){
+  const g=document.getElementById('docGallery');if(!g)return;
+  const docs=(a.documents||[]).filter(d=>!d.deleted);
+  if(!docs.length){g.innerHTML='<div class="muted" style="font-size:13px">No documents yet.</div>';return;}
+  g.innerHTML=docs.map(d=>`<div class="ph-item" id="dc_${d.file}" title="${esc(d.original_name)}">
+    <div class="ph-ov"><button class="xs" onclick="openDoc('${a.id}','${d.file}')">Open</button>
+      <button class="xs danger admin-only" onclick="actDoc('${a.id}','${d.file}')">Del</button></div>
+    ${d.type==='pdf'?`<div class="pdf-icon"><div class="ic">📄</div><div>${esc(d.original_name.slice(0,14))}${d.original_name.length>14?'…':''}</div></div>`:''}</div>`).join('');
+  for(const d of docs){if(d.type!=='pdf'){try{
+    const url=new URL(API_BASE);url.searchParams.set('action','doc');url.searchParams.set('id',a.id);url.searchParams.set('file',d.file);
+    const r=await fetch(url,{headers:{'X-Session':SESSION}});const o=URL.createObjectURL(await r.blob());
+    const el=document.getElementById('dc_'+d.file);if(el)el.insertAdjacentHTML('afterbegin',`<img src="${o}" loading="lazy">`);
+  }catch(e){}}}
+}
+async function uploadPhoto(id,inp){
+  if(!inp.files||!inp.files.length)return;
+  const file=inp.files[0];
+  if(!file.size){toast('That file is empty.',true);inp.value='';return;}
+  const fd=new FormData();fd.append('id',id);fd.append('photo',file,file.name);
+  try{await api('upload_photo',{form:fd});const d=await api('get',{params:{id}});_curAsset=d.asset;loadGallery(d.asset,_showDel);toast('Photo added.','ok');}
+  catch(e){toast(e.message,true)}finally{inp.value='';}
+}
+async function uploadDoc(id,inp){
+  if(!inp.files||!inp.files.length)return;
+  const file=inp.files[0];
+  if(!file.size){toast('That file is empty.',true);inp.value='';return;}
+  const fd=new FormData();fd.append('id',id);fd.append('doc',file,file.name);
+  try{await api('upload_doc',{form:fd});const d=await api('get',{params:{id}});_curAsset=d.asset;loadDocs(d.asset);toast('Document added.','ok');}
+  catch(e){toast(e.message,true)}finally{inp.value='';}
+}
+async function actPhoto(id,file,act){try{await api(act==='delete'?'delete_photo':'restore_photo',{json:{id,file}});
+  const d=await api('get',{params:{id}});_curAsset=d.asset;loadGallery(d.asset,_showDel);}catch(e){toast(e.message,true)}}
+async function actDoc(id,file){try{await api('delete_doc',{json:{id,file}});
+  const d=await api('get',{params:{id}});_curAsset=d.asset;loadDocs(d.asset);}catch(e){toast(e.message,true)}}
+function openDoc(id,file){const url=new URL(API_BASE);url.searchParams.set('action','doc');url.searchParams.set('id',id);url.searchParams.set('file',file);url.searchParams.set('s',SESSION);window.open(url.toString(),'_blank');}
+
+// ── Transfer ──────────────────────────────────────────────────────────────────
+function openTransfer(id){
+  const a=ASSETS.find(x=>x.id===id)||{};
+  const cur=a.employee_id?empName(a.employee_id):(a.assigned_to||'Office');
+  overlay(`<div class="scrim center" onclick="if(event.target===this)closeOverlay()"><div class="modal" style="max-width:460px">
+    <div class="modal-head"><h3>Transfer asset</h3><div class="grow"></div><button class="ghost icon" onclick="closeOverlay()">✕</button></div>
+    <div class="modal-body">
+      <div style="background:var(--bg);border-radius:9px;padding:11px 14px;margin-bottom:14px;font-size:13px">
+        ${a.code?`<span class="code-cell">${esc(a.code)}</span> · `:''}${esc(a.name||'')}<br>
+        <span class="muted">Currently held by: <b>${esc(cur)}</b></span></div>
+      <label class="fld"><span>Transfer to</span><select id="t_emp">${empOptions(a.employee_id)}</select></label>
+      <label class="fld"><span>New location (optional)</span><input id="t_loc" placeholder="e.g. Conference room"></label>
+      <label class="fld"><span>Notes (optional)</span><input id="t_notes" placeholder="Reason, condition…"></label>
+    </div>
+    <div class="modal-foot"><button class="ghost" onclick="closeOverlay()">Cancel</button>
+      <button class="primary" onclick="doTransfer('${id}')">Record transfer</button></div>
+  </div></div>`);
+}
+async function doTransfer(id){
+  const empId=document.getElementById('t_emp').value;
+  const to=empId?empName(empId):'Office';
+  try{
+    await api('transfer',{json:{id,employee_id:empId,to,to_location:document.getElementById('t_loc').value.trim(),notes:document.getElementById('t_notes').value.trim()}});
+    closeOverlay();await refresh();toast('Transfer recorded.','ok');
+  }catch(e){toast(e.message,true)}
+}
+async function removeAsset(id,restore){
+  if(!restore&&!confirm('Mark this asset as removed? Its sticker code stays reserved forever.'))return;
+  try{await api('remove',{json:{id,restore}});closeOverlay();await refresh();toast(restore?'Restored.':'Removed.','ok');}catch(e){toast(e.message,true)}
+}
+
+// ════════════ STICKERS (canvas render + download) ════════════════════════════
+function buildQRData(a,label){
+  const o={code:a.code,name:a.name,category:a.category};
+  if(a.brand_model)o.model=a.brand_model;
+  if(a.serial)o.serial=a.serial;
+  if(label)o.label=label;
+  return JSON.stringify(o);
+}
+// Render one sticker to a canvas at high resolution (print-quality)
+function renderStickerCanvas(a,label){
+  return new Promise(resolve=>{
+    const SC=4; // scale for crisp print
+    const W=340,H=150;
+    const cv=document.createElement('canvas');cv.width=W*SC;cv.height=H*SC;
+    const ctx=cv.getContext('2d');ctx.scale(SC,SC);
+    // bg
+    ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
+    // border
+    ctx.strokeStyle='#001E46';ctx.lineWidth=2;ctx.strokeRect(1,1,W-2,H-2);
+    // top bar
+    ctx.fillStyle='#001E46';ctx.fillRect(2,2,W-4,26);
+    ctx.fillStyle='#fff';ctx.font='700 12px Inter,system-ui,sans-serif';ctx.textBaseline='middle';
+    ctx.fillText('NOVA SS TRADING',10,16);
+    ctx.fillStyle='#BE9646';ctx.fillRect(W-42,13,30,4);
+    // QR (render via lib into temp element)
+    const tmp=document.createElement('div');
+    new QRCode(tmp,{text:buildQRData(a,label),width:96,height:96,correctLevel:QRCode.CorrectLevel.M});
+    setTimeout(()=>{
+      const qimg=tmp.querySelector('img')||tmp.querySelector('canvas');
+      const draw=()=>{
+        ctx.drawImage(qimg,10,36,100,100);
+        // info
+        let x=122;
+        ctx.fillStyle='#001E46';ctx.font='800 19px "SF Mono",monospace';ctx.textBaseline='alphabetic';
+        ctx.fillText(a.code,x,58);
+        let y=58;
+        if(label){y+=18;ctx.fillStyle='#BE9646';ctx.font='700 11px Inter,sans-serif';ctx.fillText(label.toUpperCase(),x,y);}
+        y+=17;ctx.fillStyle='#222';ctx.font='400 12px Inter,sans-serif';
+        ctx.fillText(clip(ctx,a.name,W-x-12),x,y);
+        y+=15;ctx.fillStyle='#666';ctx.font='400 10px Inter,sans-serif';
+        ctx.fillText(a.category.toUpperCase(),x,y);
+        if(a.serial){y+=14;ctx.fillStyle='#555';ctx.font='400 9px "SF Mono",monospace';ctx.fillText('SN: '+clip(ctx,a.serial,W-x-12),x,y);}
+        // footer
+        ctx.fillStyle='#999';ctx.font='400 8px Inter,sans-serif';ctx.textAlign='center';
+        ctx.fillText('Property of Nova SS Trading · do not remove',W/2,H-7);
+        ctx.textAlign='left';
+        resolve(cv);
+      };
+      if(qimg && qimg.tagName==='IMG' && !qimg.complete){qimg.onload=draw;}else{draw();}
+    },60);
+  });
+}
+function clip(ctx,txt,maxW){let t=txt;while(ctx.measureText(t).width>maxW&&t.length>3){t=t.slice(0,-1);}return t===txt?t:t.slice(0,-1)+'…';}
+function canvasToBlob(cv){return new Promise(res=>cv.toBlob(res,'image/png'));}
+function downloadBlob(blob,name){const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);}
+
+async function openStickerDialog(id){
+  const a=ASSETS.find(x=>x.id===id);
+  if(!a||!a.code)return toast('No sticker code for this item.',true);
+  let stickers=[];
+  try{stickers=(await api('list_stickers',{params:{asset_id:id}})).stickers||[];}catch(e){}
+  renderStickerDialog(a,stickers);
+}
+function renderStickerDialog(a,stickers){
+  const existingHTML=stickers.length?stickers.map(s=>`
+    <div class="sticker-card">
+      <div class="sticker-canvas" style="width:220px;height:auto;display:flex;align-items:center;justify-content:center;background:#f8fafc;border-radius:8px;overflow:hidden">
+        <img id="stk_${s.id}" style="width:100%;display:block" alt="${esc(s.label)}">
+      </div>
+      <div style="font-size:12.5px;font-weight:600;color:var(--ink2)">${esc(s.label)}</div>
+      <div class="row" style="gap:6px">
+        <button class="xs outline" onclick="downloadExistingSticker('${a.id}','${s.file}','${esc(a.code)}_${esc(s.label.replace(/\s+/g,'-'))}.png')">⬇ Download</button>
+        <span class="chip active" style="font-size:10px">saved</span>
+      </div>
+    </div>`).join('') : '<div class="muted" style="font-size:13px">No stickers generated yet for this item.</div>';
+
+  overlay(`<div class="scrim center" onclick="if(event.target===this)closeOverlay()"><div class="modal" style="max-width:560px">
+    <div class="modal-head"><h3>Stickers</h3><div class="grow"></div><button class="ghost icon" onclick="closeOverlay()">✕</button></div>
+    <div class="modal-body">
+      <div style="background:var(--bg);border-radius:9px;padding:11px 14px;margin-bottom:16px;font-size:13px">
+        <span class="code-cell">${esc(a.code)}</span> · ${esc(a.name)}</div>
+
+      <div class="section-title" style="margin-bottom:10px">Generated stickers</div>
+      <div class="sticker-preview" id="existingStickers">${existingHTML}</div>
+
+      <div class="section admin-only">
+        <div class="section-title" style="margin-bottom:10px">Generate a new label</div>
+        <p style="font-size:12.5px;color:var(--muted);margin:0 0 10px;line-height:1.5">
+          Each label can only be generated <b>once</b> and is then permanently saved — it can be downloaded again anytime, but not regenerated. To print another physical sticker for this item (e.g. one for the box, one for the charger), enter a new, different label below.
+        </p>
+        <div class="row" style="gap:8px">
+          <input id="newLabel" placeholder="e.g. Laptop body, Box, Charger" style="flex:1">
+          <button class="gold" onclick="generateOneSticker('${a.id}')">Generate</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="ghost" onclick="closeOverlay()">Close</button></div>
+  </div></div>`);
+  loadStickerThumbs(a,stickers);
+}
+async function loadStickerThumbs(a,stickers){
+  for(const s of stickers){
+    try{
+      const url=new URL(API_BASE);url.searchParams.set('action','sticker_file');url.searchParams.set('asset_id',a.id);url.searchParams.set('file',s.file);
+      const r=await fetch(url,{headers:{'X-Session':SESSION}});
+      const el=document.getElementById('stk_'+s.id);
+      if(el)el.src=URL.createObjectURL(await r.blob());
+    }catch(e){}
+  }
+}
+async function downloadExistingSticker(assetId,file,name){
+  try{
+    const url=new URL(API_BASE);url.searchParams.set('action','sticker_file');url.searchParams.set('asset_id',assetId);url.searchParams.set('file',file);
+    const r=await fetch(url,{headers:{'X-Session':SESSION}});
+    downloadBlob(await r.blob(),name);
+  }catch(e){toast('Could not download sticker.',true)}
+}
+async function generateOneSticker(id){
+  const a=ASSETS.find(x=>x.id===id);if(!a)return;
+  const label=document.getElementById('newLabel').value.trim();
+  if(!label)return toast('Enter a label for this sticker.',true);
+  try{
+    const cv=await renderStickerCanvas(a,label);
+    const blob=await canvasToBlob(cv);
+    if(!blob||!blob.size)throw new Error('Could not render the sticker image.');
+    const fd=new FormData();fd.append('asset_id',id);fd.append('label',label);fd.append('png',blob,'sticker.png');
+    const d=await api('generate_sticker',{form:fd});
+    downloadBlob(blob,`${a.code}_${label.replace(/\s+/g,'-')}.png`);
+    toast('Sticker generated and saved.','ok');
+    const stickers=(await api('list_stickers',{params:{asset_id:id}})).stickers||[];
+    renderStickerDialog(a,stickers);
+  }catch(e){toast(e.message,true)}
+}
+// Batch action from the table: downloads existing stickers for selected items,
+// generating a default one (labeled with the item name) for any that have none yet.
+async function printSelected(){
+  const ids=[...document.querySelectorAll('.sel:checked')].map(x=>x.dataset.id);
+  const list=ASSETS.filter(a=>ids.includes(a.id)&&a.code);
+  if(!list.length)return toast('Select one or more hardware items first.',true);
+  toast(`Preparing ${list.length} sticker(s)…`);
+  for(let i=0;i<list.length;i++){
+    const a=list[i];
+    setTimeout(async()=>{
+      try{
+        let stickers=(await api('list_stickers',{params:{asset_id:a.id}})).stickers||[];
+        if(!stickers.length){
+          const cv=await renderStickerCanvas(a,a.name);
+          const blob=await canvasToBlob(cv);
+          const fd=new FormData();fd.append('asset_id',a.id);fd.append('label',a.name);fd.append('png',blob,'sticker.png');
+          await api('generate_sticker',{form:fd});
+          downloadBlob(blob,`${a.code}.png`);
+        }else{
+          const url=new URL(API_BASE);url.searchParams.set('action','sticker_file');url.searchParams.set('asset_id',a.id);url.searchParams.set('file',stickers[0].file);
+          const r=await fetch(url,{headers:{'X-Session':SESSION}});
+          downloadBlob(await r.blob(),`${a.code}_${stickers[0].label.replace(/\s+/g,'-')}.png`);
+        }
+      }catch(e){}
+    },i*400);
+  }
+}
+
+// ── Employees ─────────────────────────────────────────────────────────────────
+function avatarHTML(e,lg){
+  const cls='avatar'+(lg?' lg':'');
+  if(e.photo){const url=new URL(API_BASE);url.searchParams.set('action','emp_photo');url.searchParams.set('id',e.id);url.searchParams.set('file',e.photo);url.searchParams.set('s',SESSION);
+    return `<span class="${cls}"><img src="${url.toString()}" alt=""></span>`;}
+  const init=(e.name||'?').split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+  return `<span class="${cls}">${esc(init)}</span>`;
+}
+function renderEmployees(){
+  const q=(document.getElementById('empSearch')?.value||'').toLowerCase().trim();
+  const list=EMPLOYEES.filter(e=>!q||[e.name,e.designation,e.email,e.contact].join(' ').toLowerCase().includes(q));
+  document.getElementById('empRows').innerHTML=list.map(e=>`<tr>
+    <td><div class="emp-row">${avatarHTML(e)}<div><div style="font-weight:600">${esc(e.name)}</div>
+      <div class="name-sub hide-sm" style="display:none">${esc(e.designation||'')}</div></div></div></td>
+    <td class="hide-sm">${esc(e.designation)||'<span class="muted">—</span>'}</td>
+    <td class="hide-sm">${esc(e.contact)||'<span class="muted">—</span>'}</td>
+    <td>${esc(e.email)||'<span class="muted">—</span>'}</td>
+    <td><div class="rowbtns">
+      <button class="xs ghost admin-only" onclick="openEmpForm(${escJ(e)})">Edit</button>
+      <button class="xs danger admin-only" onclick="removeEmp('${e.id}','${esc(e.name)}')">Remove</button>
+    </div></td></tr>`).join('');
+  document.getElementById('empEmpty').classList.toggle('hidden',list.length>0);
+}
+function openEmpForm(emp=null){
+  const isEdit=!!emp;
+  overlay(`<div class="scrim center" onclick="if(event.target===this)closeOverlay()"><div class="modal" style="max-width:480px">
+    <div class="modal-head"><h3>${isEdit?'Edit employee':'Add employee'}</h3><div class="grow"></div><button class="ghost icon" onclick="closeOverlay()">✕</button></div>
+    <div class="modal-body">
+      ${isEdit?`<div class="row" style="gap:14px;margin-bottom:18px">
+        <div id="empAvatarBox">${avatarHTML(emp,true)}</div>
+        <label class="sm outline" style="cursor:pointer">📷 Change photo<input type="file" accept="image/*" style="display:none" onchange="uploadEmpPhoto('${emp.id}',this)"></label>
+      </div>`:''}
+      <label class="fld"><span>Full name *</span><input id="e_name" value="${esc(emp?.name||'')}" placeholder="e.g. Ornab Hasan"></label>
+      <label class="fld"><span>Designation</span><input id="e_designation" value="${esc(emp?.designation||'')}" placeholder="e.g. Merchandiser"></label>
+      <label class="fld"><span>Contact (optional)</span><input id="e_contact" value="${esc(emp?.contact||'')}" placeholder="Phone number"></label>
+      <label class="fld"><span>Email (any provider)</span><input id="e_email" type="email" value="${esc(emp?.email||'')}" placeholder="name@example.com"></label>
+      ${isEdit?'':'<div class="muted" style="font-size:12px">You can add a photo after creating the employee.</div>'}
+    </div>
+    <div class="modal-foot"><button class="ghost" onclick="closeOverlay()">Cancel</button>
+      <button class="primary" onclick="saveEmp('${isEdit?emp.id:''}')">${isEdit?'Save changes':'Create employee'}</button></div>
+  </div></div>`);
+}
+async function saveEmp(id){
+  const fv=k=>document.getElementById('e_'+k)?.value.trim()||'';
+  const p={name:fv('name'),designation:fv('designation'),contact:fv('contact'),email:fv('email')};
+  if(!p.name)return toast('Name is required.',true);
+  try{
+    if(id){await api('update_employee',{json:{id,...p}});toast('Employee updated.','ok');}
+    else{await api('add_employee',{json:p});toast('Employee added.','ok');}
+    closeOverlay();EMPLOYEES=(await api('list_employees')).employees;updateStats();renderEmployees();
+  }catch(e){toast(e.message,true)}
+}
+async function removeEmp(id,name){
+  if(!confirm(`Remove ${name}? Assets assigned to them will show as Office until reassigned.`))return;
+  try{await api('remove_employee',{json:{id}});EMPLOYEES=(await api('list_employees')).employees;updateStats();renderEmployees();toast('Employee removed.','ok');}
+  catch(e){toast(e.message,true)}
+}
+async function uploadEmpPhoto(id,inp){
+  if(!inp.files||!inp.files.length)return;
+  const file=inp.files[0];if(!file.size){toast('Empty file.',true);inp.value='';return;}
+  const fd=new FormData();fd.append('id',id);fd.append('photo',file,file.name);
+  try{await api('upload_emp_photo',{form:fd});
+    EMPLOYEES=(await api('list_employees')).employees;
+    const e=EMPLOYEES.find(x=>x.id===id);
+    document.getElementById('empAvatarBox').innerHTML=avatarHTML(e,true);
+    renderEmployees();toast('Photo updated.','ok');
+  }catch(e){toast(e.message,true)}finally{inp.value='';}
+}
+
+// ── Users / access ────────────────────────────────────────────────────────────
+async function openUsers(){
+  let users=[];try{users=(await api('list_users')).users}catch(e){return toast(e.message,true)}
+  const rows=users.map(u=>`<tr><td>${esc(u.email)}</td><td><span class="chip ${u.role}">${u.role}</span></td>
+    <td style="text-align:right">${u.protected?'<span class="muted" style="font-size:11px">server admin</span>'
+      :`<button class="xs danger" onclick="removeUser('${esc(u.email)}')">Remove</button>`}</td></tr>`).join('');
+  overlay(`<div class="scrim center" onclick="if(event.target===this)closeOverlay()"><div class="modal" style="max-width:520px">
+    <div class="modal-head"><h3>Access &amp; roles</h3><div class="grow"></div><button class="ghost icon" onclick="closeOverlay()">✕</button></div>
+    <div class="modal-body">
+      <table><thead><tr><th>Email</th><th>Role</th><th></th></tr></thead><tbody>${rows}</tbody></table>
+      <div class="section"><div class="section-title" style="margin-bottom:12px">Add a user</div>
+        <div class="form2" style="align-items:end">
+          <label class="fld"><span>Email</span><input id="u_email" type="email" placeholder="name@novasstrading.com"></label>
+          <label class="fld"><span>Role</span><select id="u_role"><option value="viewer">Viewer — read only</option><option value="admin">Admin — full access</option></select></label>
+          <label class="fld full" style="margin:0"><button class="primary" style="width:100%;margin-top:6px" onclick="addUser()">Add &amp; notify by email</button></label>
+        </div>
+        <div class="muted" style="font-size:12px;margin-top:10px;line-height:1.6"><b>Viewer:</b> browse, search, export, print stickers.<br><b>Admin:</b> everything plus add/edit/remove, documents, employees &amp; users.<br>A welcome email is sent from <b>no-reply@novasstrading.com</b>.</div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="primary" onclick="closeOverlay()">Done</button></div>
+  </div></div>`);
+}
+async function addUser(){
+  const email=document.getElementById('u_email').value.trim(),role=document.getElementById('u_role').value;
+  if(!email)return toast('Enter an email.',true);
+  try{await api('add_user',{json:{email,role}});toast('User added &amp; notified.','ok');openUsers();}catch(e){toast(e.message,true)}
+}
+async function removeUser(email){
+  if(!confirm(`Remove access for ${email}? They'll be notified and signed out.`))return;
+  try{await api('remove_user',{json:{email}});toast('User removed.','ok');openUsers();}catch(e){toast(e.message,true)}
+}
+
+// ── CSV ───────────────────────────────────────────────────────────────────────
+function exportCSV(){
+  const list=currentList();
+  const cols=['code','type','category','name','brand_model','serial','specs','vendor','purchase_date','value_amount','value_currency','value_type','location','status'];
+  const rows=[[...cols,'holder'].join(',')];
+  list.forEach(a=>{const h=a.employee_id?empName(a.employee_id):(a.assigned_to||'Office');
+    rows.push([...cols.map(c=>`"${String(a[c]??'').replace(/"/g,'""')}"`),`"${h}"`].join(','));});
+  const u=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));
+  const el=document.createElement('a');el.href=u;el.download=`nova-assets-${new Date().toISOString().slice(0,10)}.csv`;el.click();
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function overlay(h){document.getElementById('overlay').innerHTML=h}
+function closeOverlay(){document.getElementById('overlay').innerHTML='';_showDel=false;}
+function toast(m,t){const el=document.createElement('div');el.className='toast'+(t===true?' err':t==='ok'?' ok':'');el.innerHTML=m;document.body.appendChild(el);setTimeout(()=>el.remove(),t===true?4500:2500);}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function escJ(o){return esc(JSON.stringify(o)).replace(/&#39;/g,"\\'")}
+function fmt(iso){try{return new Date(iso).toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}catch(e){return iso||''}}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+function endBoot(){
+  document.body.classList.remove('booting');
+  const s=document.getElementById('splash');if(s)s.remove();
+}
+(async function boot(){
+  try{
+    const saved=await decLoad();
+    if(saved?.session){SESSION=saved.session;LOGIN_EMAIL=saved.email||'';
+      try{const d=await api('me');LOGIN_EMAIL=d.email;ROLE=d.role||'viewer';showApp();await refresh();endBoot();return;}
+      catch(e){clearAuth();SESSION='';}}
+    showLogin();
+  }finally{endBoot();}
+})();
+</script>
+</body>
+</html>
