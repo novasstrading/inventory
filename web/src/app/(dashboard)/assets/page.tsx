@@ -1,12 +1,7 @@
-import { Card } from "@/components/ui/card";
+import { AssetsView } from "@/components/assets/assets-view";
+import { requirePageSession } from "@/lib/auth/session";
 
-// Full asset table/filters/stats land in M2 — this placeholder exists so the
-// authenticated shell (header, tabs, role gating) is end-to-end testable in M1.
-export default function AssetsPage() {
-  return (
-    <Card className="p-10 text-center text-muted-foreground">
-      <div className="mb-2 text-4xl">📦</div>
-      Asset inventory management lands in the next milestone.
-    </Card>
-  );
+export default async function AssetsPage() {
+  const session = await requirePageSession();
+  return <AssetsView isAdmin={session.role === "admin"} />;
 }

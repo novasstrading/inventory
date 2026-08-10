@@ -54,15 +54,20 @@ function decryptWith(envVar: string, packed: Buffer): Buffer {
   return Buffer.concat([decipher.update(ciphertext), decipher.final()]);
 }
 
-/** Encrypt a UTF-8 string field (employees.contact, assets.notes, ...) for storage. */
-export function encryptField(plaintext: string): Buffer {
-  return encryptWith("FIELD_ENCRYPTION_KEY", Buffer.from(plaintext, "utf8"));
+/**
+ * Encrypt a UTF-8 string field (employees.contact, assets.notes, ...) for storage,
+ * returned as base64 text — this drizzle-orm version's mysql varbinary() column is
+ * string-typed with no Buffer mode, and round-tripping raw binary through a JS
+ * string (implicit UTF-8) would corrupt it. Base64 keeps it a plain varchar column.
+ */
+export function encryptField(plaintext: string): string {
+  return encryptWith("FIELD_ENCRYPTION_KEY", Buffer.from(plaintext, "utf8")).toString("base64");
 }
 
 /** Decrypt a field previously produced by encryptField(). Returns "" for null/empty input. */
-export function decryptField(packed: Buffer | null | undefined): string {
-  if (!packed || packed.length === 0) return "";
-  return decryptWith("FIELD_ENCRYPTION_KEY", packed).toString("utf8");
+export function decryptField(packed: string | null | undefined): string {
+  if (!packed) return "";
+  return decryptWith("FIELD_ENCRYPTION_KEY", Buffer.from(packed, "base64")).toString("utf8");
 }
 
 /** Encrypt raw file bytes (photo/document/sticker) before they leave the app for cPanel. */

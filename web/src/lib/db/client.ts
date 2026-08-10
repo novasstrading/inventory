@@ -10,7 +10,6 @@ import * as schema from "./schema";
  */
 
 declare global {
-  // eslint-disable-next-line no-var
   var __novaMysqlPool: mysql.Pool | undefined;
 }
 
@@ -33,3 +32,6 @@ const pool = globalThis.__novaMysqlPool ?? createPool();
 if (process.env.NODE_ENV !== "production") globalThis.__novaMysqlPool = pool;
 
 export const db = drizzle(pool, { schema, mode: "default" });
+
+/** Type of the callback's `tx` param — for service functions that must run inside db.transaction(). */
+export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];

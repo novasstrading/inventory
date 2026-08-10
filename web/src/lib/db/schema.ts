@@ -14,7 +14,6 @@ import {
   smallint,
   tinyint,
   uniqueIndex,
-  varbinary,
   varchar,
 } from "drizzle-orm/mysql-core";
 
@@ -108,8 +107,9 @@ export const employees = mysqlTable(
     legacyId: varchar("legacy_id", { length: 64 }).unique(), // old e_xxx id, migration traceability
     name: varchar("name", { length: 150 }).notNull(),
     designation: varchar("designation", { length: 150 }),
-    contactEnc: varbinary("contact_enc", { length: 512 }),
-    emailEnc: varbinary("email_enc", { length: 512 }),
+    // base64 ciphertext text, not raw bytes — see lib/crypto.ts encryptField() for why.
+    contactEnc: varchar("contact_enc", { length: 700 }),
+    emailEnc: varchar("email_enc", { length: 700 }),
     photoKey: varchar("photo_key", { length: 255 }), // remote path on cPanel
     status: mysqlEnum("status", ["active", "released"]).notNull().default("active"),
     releasedAt: datetime("released_at", { mode: "date", fsp: 3 }),
@@ -146,7 +146,8 @@ export const assets = mysqlTable(
     employeeId: id("employee_id").references(() => employees.id),
     location: varchar("location", { length: 200 }),
     status: mysqlEnum("status", ["active", "removed"]).notNull().default("active"),
-    notesEnc: varbinary("notes_enc", { length: 2048 }),
+    // base64 ciphertext text, not raw bytes — see lib/crypto.ts encryptField() for why.
+    notesEnc: varchar("notes_enc", { length: 2800 }),
     createdBy: id("created_by").references(() => users.id),
     updatedBy: id("updated_by").references(() => users.id),
     createdAt: ts("created_at"),

@@ -42,11 +42,15 @@ export function fail(err: unknown) {
   return NextResponse.json({ ok: false, error: messageFor(err, status) }, { status });
 }
 
-/** Wraps a route handler body so any thrown error becomes a proper JSON error response. */
+/**
+ * Wraps a route handler body so any thrown error becomes a proper JSON error response.
+ * Return type is `Response` (not the narrower `NextResponse`) so binary/file-serving
+ * routes (photos, documents, stickers) can return a plain Response directly.
+ */
 export function withApiErrors<Args extends unknown[]>(
-  handler: (...args: Args) => Promise<NextResponse>,
+  handler: (...args: Args) => Promise<Response>,
 ) {
-  return async (...args: Args): Promise<NextResponse> => {
+  return async (...args: Args): Promise<Response> => {
     try {
       return await handler(...args);
     } catch (err) {
