@@ -6,21 +6,12 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { apiFetch } from "@/lib/api-client";
+import { withBasePath } from "@/lib/base-path";
 import { OtpInput } from "./otp-input";
 
 const EMAIL_DOMAIN = process.env.NEXT_PUBLIC_EMAIL_DOMAIN ?? "novasstrading.com";
 const RESEND_SECONDS = 60;
-
-async function api<T>(path: string, body?: unknown): Promise<T> {
-  const res = await fetch(path, {
-    method: "POST",
-    headers: body ? { "Content-Type": "application/json" } : undefined,
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  const data = await res.json();
-  if (!data.ok) throw new Error(data.error ?? "Request failed");
-  return data;
-}
 
 export function LoginCard() {
   const router = useRouter();
@@ -46,7 +37,7 @@ export function LoginCard() {
     setEmail(fullEmail);
     setSending(true);
     try {
-      const data = await api<{ message: string }>("/api/auth/request-code", { email: fullEmail });
+      const data = await apiFetch<{ message: string }>("/api/auth/request-code", { body: { email: fullEmail } });
       setStep("code");
       setCooldown(RESEND_SECONDS);
       toast.success(isResend ? "New code sent." : data.message || "Code sent!");
@@ -61,7 +52,7 @@ export function LoginCard() {
     if (value.length < 6) return toast.error("Enter all 6 digits.");
     setVerifying(true);
     try {
-      await api("/api/auth/verify-code", { email, code: value });
+      await apiFetch("/api/auth/verify-code", { body: { email, code: value } });
       toast.success("Signed in!");
       router.push("/assets");
       router.refresh();
@@ -79,7 +70,7 @@ export function LoginCard() {
       <div className="w-full max-w-[430px] overflow-hidden rounded-2xl bg-panel shadow-[0_12px_40px_rgba(16,26,38,.14)]">
         <div className="relative bg-gradient-to-br from-navy to-navy-3 px-8 pb-7 pt-9 text-center">
           <div className="mx-auto mb-3.5 flex h-[76px] w-[76px] items-center justify-center rounded-2xl bg-white p-2.5 shadow-lg">
-            <Image src="/logo-icon.png" alt="Nova SS Trading" width={56} height={56} className="object-contain" />
+            <Image src={withBasePath("/logo-icon.png")} alt="Nova SS Trading" width={56} height={56} className="object-contain" />
           </div>
           <h1 className="text-lg font-extrabold tracking-wide text-white">NOVA SS TRADING</h1>
           <p className="mt-1 text-[10.5px] font-bold uppercase tracking-[0.16em] text-gold-2">Asset Manager</p>

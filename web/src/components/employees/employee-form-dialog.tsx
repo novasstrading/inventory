@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiFetch } from "@/lib/api-client";
+import { withBasePath } from "@/lib/base-path";
 import type { Employee } from "@/lib/types";
 
 export function EmployeeFormDialog({
@@ -71,7 +72,7 @@ export function EmployeeFormDialog({
     const fd = new FormData();
     fd.append("photo", file, file.name);
     try {
-      await fetch(`/api/employees/${employee.id}/photo`, { method: "POST", body: fd }).then(async (r) => {
+      await fetch(withBasePath(`/api/employees/${employee.id}/photo`), { method: "POST", body: fd }).then(async (r) => {
         const data = await r.json();
         if (!data.ok) throw new Error(data.error ?? "Upload failed.");
       });

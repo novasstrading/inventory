@@ -35,15 +35,61 @@ unrecoverable.
 
 ## 3. Configure Vercel
 
-- [ ] New Vercel project pointed at this repo's `web/` directory as root.
+- [ ] New Vercel project pointed at this repo, with **Root Directory set to
+      `web`** — the app isn't at the repo root, and Vercel won't find it
+      otherwise.
 - [ ] Set every variable from `.env.example` in Vercel's Production
       environment: `DATABASE_URL`, `DATABASE_SSL`, `FIELD_ENCRYPTION_KEY`,
       `FILE_ENCRYPTION_KEY`, `BREVO_API_KEY`, `MAIL_FROM`, `MAIL_FROM_NAME`,
-      `NEXT_PUBLIC_EMAIL_DOMAIN`, `NEXT_PUBLIC_APP_URL` (the real domain
-      you'll use, e.g. `https://assets.novasstrading.com`), `FTP_HOST`,
-      `FTP_PORT`, `FTP_USER`, `FTP_PASSWORD`, `FTP_SECURE`, `FTP_BASE_PATH`.
+      `NEXT_PUBLIC_EMAIL_DOMAIN`, `FTP_HOST`, `FTP_PORT`, `FTP_USER`,
+      `FTP_PASSWORD`, `FTP_SECURE`, `FTP_BASE_PATH`.
+- [ ] Set `NEXT_PUBLIC_APP_URL` and `NEXT_PUBLIC_BASE_PATH` per the mounting
+      approach you're using — see §3a below. These two determine every link
+      this app generates (emails, redirects, images) and are baked in at
+      **build time**, so changing either needs a redeploy, not just an env
+      var edit.
 - [ ] Deploy once so the domain/build pipeline exists before running
       migrations against it.
+
+### 3a. Mounting at novasstrading.com/admin/inventory (Next.js Multi-Zones)
+
+Decided approach: this app stays its own separate Vercel project (its own
+repo, build, deploy), and the **main novasstrading.com Next.js project**
+proxies one path prefix to it. The browser only ever sees `novasstrading.com`
+— this second Vercel URL is never exposed to users.
+
+**In this repo** (`web/`), already wired to read these at build time:
+- `NEXT_PUBLIC_BASE_PATH=/admin/inventory`
+- `NEXT_PUBLIC_APP_URL=https://novasstrading.com/admin/inventory`
+
+**In the main novasstrading.com repo**, add to `next.config.js`:
+```js
+async rewrites() {
+  return [
+    { source: '/admin/inventory', destination: `${process.env.INVENTORY_URL}/admin/inventory` },
+    { source: '/admin/inventory/:path*', destination: `${process.env.INVENTORY_URL}/admin/inventory/:path*` },
+  ];
+}
+```
+where `INVENTORY_URL` is set (in the main site's Vercel project env vars) to
+this app's own production URL, e.g. `https://nova-inventory.vercel.app`
+(find it on this app's Vercel project page — not a custom domain, just
+whatever `*.vercel.app` URL Vercel assigned it).
+
+If the main site's Server Actions are enabled, it also needs, per
+[Next's Multi-Zones guide](https://nextjs.org/docs/app/guides/multi-zones):
+```js
+experimental: { serverActions: { allowedOrigins: ['novasstrading.com'] } }
+```
+
+**Verify after deploying both**: hit `https://novasstrading.com/admin/inventory`
+directly — not the `*.vercel.app` URL — since that's the only path that
+exercises the actual rewrite + basePath wiring together. Check the browser
+network tab for any request still going to a bare `/api/...` or `/_next/...`
+path instead of `/admin/inventory/api/...` — that indicates a spot in this
+app's frontend that didn't get the basePath prefix (search for raw
+`fetch(`/`<img src=`/`<a href=` in `web/src` not going through
+`lib/api-client.ts`'s `apiFetch` or `lib/base-path.ts`'s `withBasePath`).
 
 ## 4. Initialize the database
 
@@ -83,14 +129,15 @@ npm run db:seed-admin -- it-support@novasstrading.com   # first login
 
 ## 7. Cut over
 
-- [ ] Point the DNS/subdomain that currently serves `vercel-deploy/`
-      (e.g. `novass-inventory.vercel.app` or a custom domain) at the new
-      Vercel project instead — or update the link staff actually use.
-- [ ] Leave the legacy PHP/cPanel system running, untouched, for a grace
-      period (a week or two) as a rollback safety net — per the
-      build-verify-cutover plan you chose, don't decommission it yet.
-- [ ] Tell staff the new URL and that it's the same login flow (email code,
-      `@novasstrading.com` only).
+- [ ] Deploy the main novasstrading.com project with the §3a rewrite live —
+      `novasstrading.com/admin/inventory` now serves this app. No DNS change
+      needed since it's a path on a domain already live, not a new subdomain.
+- [ ] Leave the legacy PHP/cPanel system and its old `vercel-deploy/` URL
+      running, untouched, for a grace period (a week or two) as a rollback
+      safety net — per the build-verify-cutover plan you chose, don't
+      decommission it yet.
+- [ ] Tell staff the new URL (`novasstrading.com/admin/inventory`) and that
+      it's the same login flow (email code, `@novasstrading.com` only).
 
 ## 8. Decommission (after the grace period, only once confident)
 

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { withBasePath } from "@/lib/base-path";
 import "./globals.css";
 
 const inter = Inter({
@@ -11,7 +12,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Nova SS — Asset Manager",
   description: "Nova SS Trading internal asset management system",
-  icons: { icon: "/logo-icon.png", apple: "/logo-icon.png" },
+  icons: { icon: withBasePath("/logo-icon.png"), apple: withBasePath("/logo-icon.png") },
 };
 
 export const viewport = {

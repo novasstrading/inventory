@@ -1,3 +1,4 @@
+import { withBasePath } from "@/lib/base-path";
 import { cn } from "@/lib/utils";
 
 export function Avatar({
@@ -6,6 +7,7 @@ export function Avatar({
   size = "default",
 }: {
   name: string;
+  /** App-relative path (e.g. "/api/employees/x/photo") — this component applies the basePath. */
   photoUrl?: string | null;
   size?: "default" | "lg";
 }) {
@@ -27,7 +29,7 @@ export function Avatar({
     >
       {photoUrl ? (
         // eslint-disable-next-line @next/next/no-img-element -- authenticated, non-static proxy URL
-        <img src={photoUrl} alt="" className="h-full w-full object-cover" />
+        <img src={withBasePath(photoUrl)} alt="" className="h-full w-full object-cover" />
       ) : (
         initials
       )}

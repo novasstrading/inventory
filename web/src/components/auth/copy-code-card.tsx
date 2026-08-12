@@ -3,6 +3,7 @@
 import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { withBasePath } from "@/lib/base-path";
 import { cn } from "@/lib/utils";
 
 /**
@@ -25,7 +26,7 @@ export function CopyCodeCard({ code }: { code: string }) {
     <div className="flex min-h-screen items-center justify-center bg-[#EDEFF3] p-5">
       <div className="w-full max-w-[360px] rounded-2xl bg-white p-9 py-8 text-center shadow-[0_10px_40px_rgba(0,0,0,.12)]">
         <div className="mx-auto mb-4 h-[52px] w-[52px] rounded-[10px] bg-navy p-1.5">
-          <Image src="/logo-icon.png" alt="" width={40} height={40} className="h-full w-full object-contain" />
+          <Image src={withBasePath("/logo-icon.png")} alt="" width={40} height={40} className="h-full w-full object-contain" />
         </div>
         <div className="text-[11px] font-bold uppercase tracking-[0.08em] text-faint">Your sign-in code</div>
         <div className="my-2 select-all font-mono text-[44px] font-extrabold tracking-[0.18em] text-navy">{code}</div>

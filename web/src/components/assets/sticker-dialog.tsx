@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { apiFetch } from "@/lib/api-client";
+import { withBasePath } from "@/lib/base-path";
 import { canvasToBlob, downloadBlob, renderStickerCanvas } from "@/lib/stickers/render";
 import type { Asset, Sticker } from "@/lib/types";
 
@@ -21,7 +22,7 @@ function StickerThumb({ assetId, sticker }: { assetId: string; sticker: Sticker 
   const [src, setSrc] = React.useState<string | null>(null);
   React.useEffect(() => {
     let revoke: string | null = null;
-    fetch(`/api/assets/${assetId}/stickers/${sticker.id}`)
+    fetch(withBasePath(`/api/assets/${assetId}/stickers/${sticker.id}`))
       .then((r) => r.blob())
       .then((b) => {
         const url = URL.createObjectURL(b);
@@ -35,7 +36,7 @@ function StickerThumb({ assetId, sticker }: { assetId: string; sticker: Sticker 
   }, [assetId, sticker.id]);
 
   async function download() {
-    const res = await fetch(`/api/assets/${assetId}/stickers/${sticker.id}`);
+    const res = await fetch(withBasePath(`/api/assets/${assetId}/stickers/${sticker.id}`));
     downloadBlob(await res.blob(), `sticker_${sticker.label.replace(/\s+/g, "-")}.png`);
   }
 
@@ -103,7 +104,7 @@ export function StickerDialog({
       const fd = new FormData();
       fd.append("label", newLabel.trim());
       fd.append("png", blob, "sticker.png");
-      const res = await fetch(`/api/assets/${asset!.id}/stickers`, { method: "POST", body: fd });
+      const res = await fetch(withBasePath(`/api/assets/${asset!.id}/stickers`), { method: "POST", body: fd });
       const data = await res.json();
       if (!data.ok) throw new Error(data.error ?? "Could not generate sticker.");
       downloadBlob(blob, `${asset!.code}_${newLabel.trim().replace(/\s+/g, "-")}.png`);

@@ -1,11 +1,13 @@
 "use client";
 
+import { withBasePath } from "./base-path";
+
 /** Thin fetch wrapper that unwraps the {ok, ...}/{ok:false, error} envelope from lib/http.ts. */
 export async function apiFetch<T = unknown>(
   path: string,
   options: { method?: string; body?: unknown } = {},
 ): Promise<T> {
-  const res = await fetch(path, {
+  const res = await fetch(withBasePath(path), {
     method: options.method ?? (options.body !== undefined ? "POST" : "GET"),
     headers: options.body !== undefined ? { "Content-Type": "application/json" } : undefined,
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,

@@ -4,15 +4,17 @@ import * as React from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api-client";
+import { withBasePath } from "@/lib/base-path";
 import type { Doc, Photo } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
+/** `url` is app-relative (e.g. "/api/assets/x/photos/y") — this component applies the basePath. */
 function Thumb({ url, alt, isPdf, label }: { url: string; alt: string; isPdf: boolean; label?: string }) {
   const [src, setSrc] = React.useState<string | null>(null);
   React.useEffect(() => {
     if (isPdf) return;
     let revoke: string | null = null;
-    fetch(url)
+    fetch(withBasePath(url))
       .then((r) => r.blob())
       .then((b) => {
         const u = URL.createObjectURL(b);
@@ -63,7 +65,7 @@ export function PhotoGallery({ assetId, isAdmin }: { assetId: string; isAdmin: b
     const fd = new FormData();
     fd.append("photo", file, file.name);
     try {
-      const res = await fetch(`/api/assets/${assetId}/photos`, { method: "POST", body: fd });
+      const res = await fetch(withBasePath(`/api/assets/${assetId}/photos`), { method: "POST", body: fd });
       const data = await res.json();
       if (!data.ok) throw new Error(data.error ?? "Upload failed.");
       toast.success("Photo added.");
@@ -146,7 +148,7 @@ export function DocumentGallery({ assetId, isAdmin }: { assetId: string; isAdmin
     const fd = new FormData();
     fd.append("doc", file, file.name);
     try {
-      const res = await fetch(`/api/assets/${assetId}/documents`, { method: "POST", body: fd });
+      const res = await fetch(withBasePath(`/api/assets/${assetId}/documents`), { method: "POST", body: fd });
       const data = await res.json();
       if (!data.ok) throw new Error(data.error ?? "Upload failed.");
       toast.success("Document added.");
@@ -189,7 +191,7 @@ export function DocumentGallery({ assetId, isAdmin }: { assetId: string; isAdmin
             <div key={d.id} className="group relative aspect-square overflow-hidden rounded-[10px] border border-border bg-muted" title={d.originalName}>
               <Thumb url={`/api/assets/${assetId}/documents/${d.id}`} alt="" isPdf={d.docType === "pdf"} label={d.originalName} />
               <div className="absolute inset-0 flex items-center justify-center gap-1.5 bg-black/60 opacity-0 transition-opacity group-hover:opacity-100">
-                <a href={`/api/assets/${assetId}/documents/${d.id}`} target="_blank" rel="noreferrer">
+                <a href={withBasePath(`/api/assets/${assetId}/documents/${d.id}`)} target="_blank" rel="noreferrer">
                   <Button size="xs">Open</Button>
                 </a>
                 {isAdmin && (

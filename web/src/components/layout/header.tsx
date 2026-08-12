@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { withBasePath } from "@/lib/base-path";
 import { cn } from "@/lib/utils";
 import { SignOutButton } from "./sign-out-button";
 
@@ -19,7 +20,7 @@ export function DashboardHeader({ email, role }: { email: string; role: "admin" 
     <header className="sticky top-0 z-50 flex h-[60px] items-center gap-3.5 bg-navy px-4.5 text-white shadow-[0_1px_0_rgba(255,255,255,.06),0_4px_20px_rgba(0,0,0,.15)]">
       <div className="flex items-center gap-2.5">
         <div className="flex h-10 w-10 items-center justify-center rounded-[9px] bg-white p-1 shadow-[0_2px_8px_rgba(0,0,0,.2)]">
-          <Image src="/logo-icon.png" alt="Nova SS" width={32} height={32} className="object-contain" />
+          <Image src={withBasePath("/logo-icon.png")} alt="Nova SS" width={32} height={32} className="object-contain" />
         </div>
         <div className="flex flex-col gap-0.5">
           <div className="text-[15px] font-extrabold leading-none tracking-wide">NOVA SS</div>
