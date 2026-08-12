@@ -1,5 +1,5 @@
 import "server-only";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { decryptField, encryptField } from "@/lib/crypto";
 import { newId } from "@/lib/db/ids";
@@ -59,17 +59,29 @@ function toDTO(row: AssetRow): AssetDTO {
 export async function listAssets(): Promise<AssetDTO[]> {
   // Small internal-tool data volume (hundreds, not millions of rows) — the whole set is
   // returned and the client owns search/filter/pagination, same as the legacy app.
-  const rows = await db.query.assets.findMany({
-    with: { category: true },
-    orderBy: (a, { desc }) => [desc(a.createdAt)],
-  });
-  return rows.map(toDTO);
+  //
+  // Uses an explicit LEFT JOIN rather than Drizzle's relational `with:` API — on the
+  // MySQL dialect that generates a `LEFT JOIN LATERAL (... JSON_ARRAY ...) ON true`,
+  // which is MySQL-8-only syntax that MariaDB (production, Exonhost cPanel) cannot
+  // parse. A plain join is portable to both.
+  const rows = await db
+    .select({ asset: assets, category: categories })
+    .from(assets)
+    .leftJoin(categories, eq(assets.categoryId, categories.id))
+    .orderBy(desc(assets.createdAt));
+  return rows.map((r) => toDTO({ ...r.asset, category: r.category }));
 }
 
 export async function getAssetOrThrow(id: string): Promise<AssetDTO> {
-  const row = await db.query.assets.findFirst({ where: eq(assets.id, id), with: { category: true } });
+  const rows = await db
+    .select({ asset: assets, category: categories })
+    .from(assets)
+    .leftJoin(categories, eq(assets.categoryId, categories.id))
+    .where(eq(assets.id, id))
+    .limit(1);
+  const row = rows[0];
   if (!row) throw new NotFoundError("Asset not found.");
-  return toDTO(row);
+  return toDTO({ ...row.asset, category: row.category });
 }
 
 export async function createAsset(input: AssetCreateInput, actorUserId: string): Promise<AssetDTO> {
