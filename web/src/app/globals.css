@@ -75,6 +75,8 @@
   --color-ring: var(--ring);
 
   /* Raw brand tokens, available directly as bg-navy, text-gold, etc. */
+  --color-panel: var(--panel);
+  --color-bg: var(--bg);
   --color-navy: var(--navy);
   --color-navy-2: var(--navy-2);
   --color-navy-3: var(--navy-3);
