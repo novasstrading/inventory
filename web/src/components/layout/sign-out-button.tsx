@@ -5,7 +5,7 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api-client";
 
-export function SignOutButton() {
+export function SignOutButton({ className, children }: { className?: string; children?: React.ReactNode }) {
   const router = useRouter();
   const [loading, setLoading] = React.useState(false);
 
@@ -20,7 +20,14 @@ export function SignOutButton() {
   }
 
   return (
-    <Button variant="ghost" size="sm" disabled={loading} onClick={signOut} className="text-[#C5D2E4] hover:text-white">
+    <Button
+      variant="ghost"
+      size="sm"
+      disabled={loading}
+      onClick={signOut}
+      className={className ?? "text-[#C5D2E4] hover:text-white"}
+    >
+      {children}
       Sign out
     </Button>
   );
