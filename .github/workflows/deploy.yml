@@ -1,0 +1,30 @@
+name: Deploy to Vercel Production
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'web/**'          # only trigger when web/ changes
+  workflow_dispatch:      # allow manual triggering
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Deploy to Vercel
+        working-directory: web
+        run: npx vercel --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: team_PJHxQI50IFcP0ZlDNezM1PCy
+          VERCEL_PROJECT_ID: prj_Ag03hfg2CSPsZ2yKAYQj2PtlfBG6
