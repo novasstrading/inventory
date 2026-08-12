@@ -12,9 +12,10 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
-    "db:seed": "tsx --env-file=.env.local scripts/seed-categories.ts",
-    "db:seed-admin": "tsx --env-file=.env.local scripts/seed-admin.ts",
-    "migrate:legacy": "tsx --env-file=.env.local scripts/migrate-legacy-data.ts"
+    "db:seed": "tsx --tsconfig scripts/tsconfig.json --env-file=.env.local scripts/seed-categories.ts",
+    "db:seed-admin": "tsx --tsconfig scripts/tsconfig.json --env-file=.env.local scripts/seed-admin.ts",
+    "db:seed-employees": "tsx --tsconfig scripts/tsconfig.json --env-file=.env.local scripts/seed-employees.ts",
+    "migrate:legacy": "tsx --tsconfig scripts/tsconfig.json --env-file=.env.local scripts/migrate-legacy-data.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.7.1",
@@ -36,6 +37,7 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "react-hook-form": "^7.85.0",
+    "server-only": "^0.0.1",
     "sonner": "^2.0.8",
     "ssh2-sftp-client": "^12.1.1",
     "tailwind-merge": "^3.6.0",
