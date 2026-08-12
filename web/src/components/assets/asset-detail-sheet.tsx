@@ -87,17 +87,20 @@ export function AssetDetailSheet({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent>
-        <SheetHeader>
-          {asset.code && <span className="font-mono text-[15px] font-bold text-navy">{asset.code}</span>}
-          <Badge variant={asset.type}>{asset.category}</Badge>
+        <SheetHeader className="border-b-0 bg-[linear-gradient(135deg,var(--navy)_0%,var(--navy-2)_100%)]">
           <div className="flex-1" />
-          <Badge variant={asset.status}>{asset.status}</Badge>
-          <SheetClose />
+          <SheetClose className="text-white/70 hover:bg-white/10 hover:text-white" />
         </SheetHeader>
+        <div className="bg-[linear-gradient(135deg,var(--navy)_0%,var(--navy-2)_100%)] px-5 pb-5 pt-1 text-white">
+          <SheetTitle className="text-white">{asset.name}</SheetTitle>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            {asset.code && <span className="font-mono text-[13px] font-bold text-gold-2">{asset.code}</span>}
+            <Badge variant={asset.type}>{asset.category}</Badge>
+            <Badge variant={asset.status}>{asset.status}</Badge>
+          </div>
+          {asset.brandModel && <div className="mt-1.5 text-[13px] text-white/70">{asset.brandModel}</div>}
+        </div>
         <SheetBody>
-          <SheetTitle>{asset.name}</SheetTitle>
-          {asset.brandModel && <div className="mt-1 text-muted-foreground">{asset.brandModel}</div>}
-
           {isAdmin && (
             <div className="mt-4 flex flex-wrap gap-2">
               <Button variant="primary" size="sm" onClick={() => onEdit(asset)}>
@@ -117,31 +120,48 @@ export function AssetDetailSheet({
             </div>
           )}
 
-          <dl className="mt-4.5 grid grid-cols-[120px_1fr] gap-x-3.5 gap-y-2 text-[13.5px]">
-            <Kv label="Serial" value={asset.serial} />
-            <Kv label="Specs" value={asset.specs} />
-            <Kv label="Vendor" value={asset.vendor} />
-            <Kv label="Purchased" value={asset.purchaseDate} />
-            {asset.valueAmount && (
-              <>
-                <dt className="text-muted-foreground">Value</dt>
-                <dd className="text-ink-2">
-                  {asset.valueAmount} {asset.valueCurrency}
-                  {asset.valueType !== "one_time" && (
-                    <span className="ml-1.5 rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
-                      {asset.valueType}
-                    </span>
-                  )}
-                </dd>
-              </>
-            )}
-            <dt className="text-muted-foreground">Assigned to</dt>
-            <dd className="text-ink-2">{holder}</dd>
-            <Kv label="Location" value={asset.location} />
-            <Kv label="Notes" value={asset.notes} />
-            <dt className="text-muted-foreground">Added</dt>
-            <dd className="text-ink-2">{fmt(asset.createdAt)}</dd>
-          </dl>
+          <div className="mt-4.5">
+            <div className="mb-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Overview</div>
+            <dl className="grid grid-cols-[120px_1fr] gap-x-3.5 gap-y-2 text-[13.5px]">
+              <Kv label="Serial" value={asset.serial} />
+              <Kv label="Vendor" value={asset.vendor} />
+              <Kv label="Purchased" value={asset.purchaseDate} />
+            </dl>
+          </div>
+
+          <div className="mt-5 border-t border-line-2 pt-4">
+            <div className="mb-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Specs &amp; value</div>
+            <dl className="grid grid-cols-[120px_1fr] gap-x-3.5 gap-y-2 text-[13.5px]">
+              <Kv label="Specs" value={asset.specs} />
+              {asset.valueAmount && (
+                <>
+                  <dt className="text-muted-foreground">Value</dt>
+                  <dd className="text-ink-2">
+                    {asset.valueAmount} {asset.valueCurrency}
+                    {asset.valueType !== "one_time" && (
+                      <span className="ml-1.5 rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+                        {asset.valueType}
+                      </span>
+                    )}
+                  </dd>
+                </>
+              )}
+            </dl>
+          </div>
+
+          <div className="mt-5 border-t border-line-2 pt-4">
+            <div className="mb-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+              Assignment &amp; lifecycle
+            </div>
+            <dl className="grid grid-cols-[120px_1fr] gap-x-3.5 gap-y-2 text-[13.5px]">
+              <dt className="text-muted-foreground">Assigned to</dt>
+              <dd className="text-ink-2">{holder}</dd>
+              <Kv label="Location" value={asset.location} />
+              <Kv label="Notes" value={asset.notes} />
+              <dt className="text-muted-foreground">Added</dt>
+              <dd className="text-ink-2">{fmt(asset.createdAt)}</dd>
+            </dl>
+          </div>
 
           <div className="mt-6 border-t border-border pt-4">
             <div className="mb-2.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
