@@ -18,6 +18,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { apiFetch } from "@/lib/api-client";
 import type { Asset, Category, Employee } from "@/lib/types";
+import { cn } from "@/lib/utils";
+
+function SectionHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="col-span-full mb-1.5 mt-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground first:mt-0">
+      {children}
+    </div>
+  );
+}
 
 export function AssetFormDialog({
   open,
@@ -49,6 +58,7 @@ export function AssetFormDialog({
   const [location, setLocation] = React.useState(asset?.location ?? "");
   const [notes, setNotes] = React.useState(asset?.notes ?? "");
   const [saving, setSaving] = React.useState(false);
+  const [errors, setErrors] = React.useState<Record<string, string>>({});
 
   React.useEffect(() => {
     if (!open) return;
@@ -65,11 +75,18 @@ export function AssetFormDialog({
     setEmployeeId(asset?.employeeId ?? "");
     setLocation(asset?.location ?? "");
     setNotes(asset?.notes ?? "");
+    setErrors({});
   }, [open, asset, categories]);
 
   async function save() {
-    if (!name.trim()) return toast.error("Name is required.");
-    if (!isEdit && !category) return toast.error("Pick a category.");
+    const nextErrors: Record<string, string> = {};
+    if (!name.trim()) nextErrors.name = "Name is required.";
+    if (!isEdit && !category) nextErrors.category = "Pick a category.";
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
+      return;
+    }
+    setErrors({});
     setSaving(true);
     try {
       const payload = {
@@ -120,6 +137,7 @@ export function AssetFormDialog({
             </div>
           )}
           <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
+            <SectionHeading>Identity</SectionHeading>
             {!isEdit && (
               <div className="col-span-full mb-3">
                 <Label>Category *</Label>
@@ -139,8 +157,19 @@ export function AssetFormDialog({
             )}
             <div className="col-span-full mb-3">
               <Label>Name / title *</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Dell Latitude 5420" />
+              <Input
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  if (errors.name) setErrors((prev) => ({ ...prev, name: "" }));
+                }}
+                placeholder="e.g. Dell Latitude 5420"
+                className={cn(errors.name && "border-danger animate-[shake_0.4s_ease-in-out]")}
+              />
+              {errors.name && <div className="mt-1 text-[11.5px] text-danger">{errors.name}</div>}
             </div>
+
+            <SectionHeading>Specs &amp; vendor</SectionHeading>
             <div className="mb-3">
               <Label>Brand / model</Label>
               <Input value={brandModel} onChange={(e) => setBrandModel(e.target.value)} />
@@ -161,7 +190,9 @@ export function AssetFormDialog({
               <Label>Purchase date</Label>
               <Input type="date" value={purchaseDate} onChange={(e) => setPurchaseDate(e.target.value)} />
             </div>
-            <div className="mb-3">
+
+            <SectionHeading>Value</SectionHeading>
+            <div className="col-span-full mb-3">
               <Label>Value / cost</Label>
               <div className="flex gap-1.5">
                 <Input
@@ -189,6 +220,8 @@ export function AssetFormDialog({
                 </Select>
               </div>
             </div>
+
+            <SectionHeading>Assignment &amp; notes</SectionHeading>
             <div className="col-span-full mb-3">
               <Label>Assigned to</Label>
               <Select value={employeeId} onChange={(e) => setEmployeeId(e.target.value)}>
