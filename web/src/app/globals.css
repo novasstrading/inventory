@@ -108,6 +108,10 @@ body {
   color: var(--foreground);
 }
 
+:focus-visible {
+  transition: outline-offset 0.15s ease, box-shadow 0.15s ease;
+}
+
 @keyframes shake {
   0%,
   100% {
@@ -121,4 +125,34 @@ body {
   80% {
     transform: translateX(5px);
   }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
+}
+
+.glass {
+  background: rgba(0, 30, 70, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.hover-lift {
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(16, 26, 38, 0.1);
+}
+
+.grad-navy {
+  background: linear-gradient(180deg, var(--navy) 0%, var(--navy-2) 100%);
+}
+.grad-gold {
+  background: linear-gradient(180deg, var(--gold) 0%, var(--gold-2) 100%);
 }
