@@ -292,15 +292,18 @@ export function AssetsView({ isAdmin }: { isAdmin: boolean }) {
         {pageSlice.length === 0 && <Card>{emptyStateBlock}</Card>}
       </div>
 
-      {/* desktop: table — no overflow-hidden here: an ancestor with non-visible
-          overflow becomes the sticky positioning context, and since this Card
-          never scrolls itself, that broke the sticky header (it rendered
-          pinned inside the card's own box instead of the page viewport,
-          overlapping rows). overflow-x-auto below still clips/scrolls fine. */}
+      {/* desktop: table — header is intentionally NOT sticky. The horizontal-
+          scroll wrapper below needs overflow-x-auto, and per the CSS overflow
+          spec, setting overflow-x to anything but visible forces overflow-y to
+          also compute as non-visible — silently turning that div into the
+          sticky positioning container for any position:sticky descendant. It
+          never actually scrolls vertically, so the thead's sticky offset came
+          out wrong and it rendered overlapping the first row. Confirmed via a
+          minimal reproduction before and after removing sticky. */}
       <Card className="hidden sm:block">
         <div className="overflow-x-auto">
           <Table>
-            <TableHeader className="sticky top-[60px] z-10 bg-panel">
+            <TableHeader className="bg-panel">
               <TableRow>
                 <TableHead>Code</TableHead>
                 <TableHead>Item</TableHead>
