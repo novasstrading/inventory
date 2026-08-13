@@ -128,12 +128,3 @@ export function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
     canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("Could not render the sticker image."))), "image/png");
   });
 }
-
-export function downloadBlob(blob: Blob, name: string) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = name;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}

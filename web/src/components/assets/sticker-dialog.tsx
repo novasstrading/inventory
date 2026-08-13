@@ -18,7 +18,8 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api-client";
 import { withBasePath } from "@/lib/base-path";
-import { canvasToBlob, downloadBlob, renderStickerCanvas } from "@/lib/stickers/render";
+import { downloadBlob } from "@/lib/download";
+import { canvasToBlob, renderStickerCanvas } from "@/lib/stickers/render";
 import type { Asset, Sticker } from "@/lib/types";
 
 function StickerThumb({ assetId, sticker }: { assetId: string; sticker: Sticker }) {

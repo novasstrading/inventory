@@ -58,7 +58,7 @@ export function AssetDetailSheet({
   const [transfers, setTransfers] = React.useState<Transfer[]>([]);
   const [busy, setBusy] = React.useState(false);
   const [stickerOpen, setStickerOpen] = React.useState(false);
-  const [confirmRemoveOpen, setConfirmRemoveOpen] = React.useState(false);
+  const [confirmAction, setConfirmAction] = React.useState<"remove" | "restore" | null>(null);
 
   React.useEffect(() => {
     if (!open || !asset) return;
@@ -75,7 +75,7 @@ export function AssetDetailSheet({
     try {
       await apiFetch(`/api/assets/${asset!.id}/remove`, { method: "POST", body: { restore } });
       toast.success(restore ? "Restored." : "Removed.");
-      setConfirmRemoveOpen(false);
+      setConfirmAction(null);
       await onChanged();
       onOpenChange(false);
     } catch (e) {
@@ -86,11 +86,7 @@ export function AssetDetailSheet({
   }
 
   function toggleRemoved() {
-    if (asset!.status === "removed") {
-      doRemove(true);
-    } else {
-      setConfirmRemoveOpen(true);
-    }
+    setConfirmAction(asset!.status === "removed" ? "restore" : "remove");
   }
 
   return (
@@ -201,13 +197,18 @@ export function AssetDetailSheet({
       </SheetContent>
       <StickerDialog open={stickerOpen} onOpenChange={setStickerOpen} asset={asset} isAdmin={isAdmin} />
       <ConfirmDialog
-        open={confirmRemoveOpen}
-        onOpenChange={setConfirmRemoveOpen}
-        title="Mark this asset as removed?"
-        description="Its sticker code stays reserved forever and can't be reused, even after removal."
-        confirmLabel="Remove"
+        open={confirmAction !== null}
+        onOpenChange={(o) => !o && setConfirmAction(null)}
+        title={confirmAction === "restore" ? "Restore this asset?" : "Mark this asset as removed?"}
+        description={
+          confirmAction === "restore"
+            ? "It'll reappear in the active assets list and can be assigned/transferred again."
+            : "Its sticker code stays reserved forever and can't be reused, even after removal."
+        }
+        confirmLabel={confirmAction === "restore" ? "Restore" : "Remove"}
+        variant={confirmAction === "restore" ? "primary" : "danger"}
         loading={busy}
-        onConfirm={() => doRemove(false)}
+        onConfirm={() => doRemove(confirmAction === "restore")}
       />
     </Sheet>
   );

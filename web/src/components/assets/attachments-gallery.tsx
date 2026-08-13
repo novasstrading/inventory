@@ -3,12 +3,15 @@
 import * as React from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api-client";
 import { withBasePath } from "@/lib/base-path";
+import { downloadBlob } from "@/lib/download";
 import { MAX_FILE_BYTES, MAX_FILE_MB } from "@/lib/storage/constants";
 import type { Doc, Photo } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { AttachmentViewerDialog } from "./attachment-viewer-dialog";
 
 function checkFileSize(file: File): boolean {
   if (file.size > MAX_FILE_BYTES) {
@@ -16,6 +19,15 @@ function checkFileSize(file: File): boolean {
     return false;
   }
   return true;
+}
+
+async function downloadAttachment(url: string, name: string) {
+  try {
+    const res = await fetch(withBasePath(url));
+    downloadBlob(await res.blob(), name);
+  } catch {
+    toast.error("Could not download the file.");
+  }
 }
 
 /** `url` is app-relative (e.g. "/api/assets/x/photos/y") — this component applies the basePath. */
@@ -98,6 +110,9 @@ export function PhotoGallery({ assetId, isAdmin }: { assetId: string; isAdmin: b
   const [photos, setPhotos] = React.useState<Photo[]>([]);
   const [showDeleted, setShowDeleted] = React.useState(false);
   const [uploading, setUploading] = React.useState(false);
+  const [viewing, setViewing] = React.useState<Photo | null>(null);
+  const [confirmTarget, setConfirmTarget] = React.useState<{ photo: Photo; del: boolean } | null>(null);
+  const [confirmBusy, setConfirmBusy] = React.useState(false);
 
   const load = React.useCallback(async () => {
     try {
@@ -131,12 +146,19 @@ export function PhotoGallery({ assetId, isAdmin }: { assetId: string; isAdmin: b
     }
   }
 
-  async function toggle(photoId: string, del: boolean) {
+  async function confirmToggle() {
+    if (!confirmTarget) return;
+    setConfirmBusy(true);
     try {
-      await apiFetch(`/api/assets/${assetId}/photos/${photoId}/delete`, { body: { restore: !del } });
+      await apiFetch(`/api/assets/${assetId}/photos/${confirmTarget.photo.id}/delete`, {
+        body: { restore: !confirmTarget.del },
+      });
+      setConfirmTarget(null);
       await load();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not update photo.");
+    } finally {
+      setConfirmBusy(false);
     }
   }
 
@@ -165,17 +187,53 @@ export function PhotoGallery({ assetId, isAdmin }: { assetId: string; isAdmin: b
                 <span className="absolute left-1.5 top-1.5 z-10 rounded bg-danger px-1.5 py-0.5 text-[9px] font-semibold text-white">deleted</span>
               )}
               <Thumb url={`/api/assets/${assetId}/photos/${p.id}`} alt="" isPdf={false} />
-              {isAdmin && (
-                <div className="absolute inset-0 flex items-center justify-center gap-1.5 bg-black/60 opacity-0 transition-opacity group-hover:opacity-100">
-                  <Button variant={p.deleted ? "default" : "danger"} size="xs" onClick={() => toggle(p.id, !p.deleted)}>
+              <div className="absolute inset-0 flex flex-wrap items-center justify-center gap-1.5 bg-black/60 p-1.5 opacity-0 transition-opacity group-hover:opacity-100">
+                <Button size="xs" onClick={() => setViewing(p)}>
+                  View
+                </Button>
+                <Button
+                  variant="outline"
+                  size="xs"
+                  className="bg-white"
+                  onClick={() => downloadAttachment(`/api/assets/${assetId}/photos/${p.id}`, p.originalName || "photo")}
+                >
+                  ⬇
+                </Button>
+                {isAdmin && (
+                  <Button
+                    variant={p.deleted ? "default" : "danger"}
+                    size="xs"
+                    onClick={() => setConfirmTarget({ photo: p, del: !p.deleted })}
+                  >
                     {p.deleted ? "Restore" : "Delete"}
                   </Button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           ))}
         </div>
       )}
+      <AttachmentViewerDialog
+        open={!!viewing}
+        onOpenChange={(open) => !open && setViewing(null)}
+        url={viewing ? `/api/assets/${assetId}/photos/${viewing.id}` : ""}
+        name={viewing?.originalName || "photo"}
+        isPdf={false}
+      />
+      <ConfirmDialog
+        open={!!confirmTarget}
+        onOpenChange={(open) => !open && setConfirmTarget(null)}
+        title={confirmTarget?.del ? "Delete this photo?" : "Restore this photo?"}
+        description={
+          confirmTarget?.del
+            ? "It'll be hidden by default but can be restored later — nothing is permanently lost."
+            : "It'll reappear in the active photo list for this asset."
+        }
+        confirmLabel={confirmTarget?.del ? "Delete" : "Restore"}
+        variant={confirmTarget?.del ? "danger" : "primary"}
+        loading={confirmBusy}
+        onConfirm={confirmToggle}
+      />
     </div>
   );
 }
@@ -183,6 +241,9 @@ export function PhotoGallery({ assetId, isAdmin }: { assetId: string; isAdmin: b
 export function DocumentGallery({ assetId, isAdmin }: { assetId: string; isAdmin: boolean }) {
   const [docs, setDocs] = React.useState<Doc[]>([]);
   const [uploading, setUploading] = React.useState(false);
+  const [viewing, setViewing] = React.useState<Doc | null>(null);
+  const [confirmTarget, setConfirmTarget] = React.useState<Doc | null>(null);
+  const [confirmBusy, setConfirmBusy] = React.useState(false);
 
   const load = React.useCallback(async () => {
     try {
@@ -216,12 +277,17 @@ export function DocumentGallery({ assetId, isAdmin }: { assetId: string; isAdmin
     }
   }
 
-  async function remove(docId: string) {
+  async function confirmRemove() {
+    if (!confirmTarget) return;
+    setConfirmBusy(true);
     try {
-      await apiFetch(`/api/assets/${assetId}/documents/${docId}/delete`, { body: {} });
+      await apiFetch(`/api/assets/${assetId}/documents/${confirmTarget.id}/delete`, { body: {} });
+      setConfirmTarget(null);
       await load();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not delete document.");
+    } finally {
+      setConfirmBusy(false);
     }
   }
 
@@ -238,12 +304,20 @@ export function DocumentGallery({ assetId, isAdmin }: { assetId: string; isAdmin
           {docs.map((d) => (
             <div key={d.id} className="group relative aspect-square overflow-hidden rounded-[10px] border border-border bg-muted" title={d.originalName}>
               <Thumb url={`/api/assets/${assetId}/documents/${d.id}`} alt="" isPdf={d.docType === "pdf"} label={d.originalName} />
-              <div className="absolute inset-0 flex items-center justify-center gap-1.5 bg-black/60 opacity-0 transition-opacity group-hover:opacity-100">
-                <a href={withBasePath(`/api/assets/${assetId}/documents/${d.id}`)} target="_blank" rel="noreferrer">
-                  <Button size="xs">Open</Button>
-                </a>
+              <div className="absolute inset-0 flex flex-wrap items-center justify-center gap-1.5 bg-black/60 p-1.5 opacity-0 transition-opacity group-hover:opacity-100">
+                <Button size="xs" onClick={() => setViewing(d)}>
+                  View
+                </Button>
+                <Button
+                  variant="outline"
+                  size="xs"
+                  className="bg-white"
+                  onClick={() => downloadAttachment(`/api/assets/${assetId}/documents/${d.id}`, d.originalName || "document")}
+                >
+                  ⬇
+                </Button>
                 {isAdmin && (
-                  <Button variant="danger" size="xs" onClick={() => remove(d.id)}>
+                  <Button variant="danger" size="xs" onClick={() => setConfirmTarget(d)}>
                     Del
                   </Button>
                 )}
@@ -252,6 +326,23 @@ export function DocumentGallery({ assetId, isAdmin }: { assetId: string; isAdmin
           ))}
         </div>
       )}
+      <AttachmentViewerDialog
+        open={!!viewing}
+        onOpenChange={(open) => !open && setViewing(null)}
+        url={viewing ? `/api/assets/${assetId}/documents/${viewing.id}` : ""}
+        name={viewing?.originalName || "document"}
+        isPdf={viewing?.docType === "pdf"}
+      />
+      <ConfirmDialog
+        open={!!confirmTarget}
+        onOpenChange={(open) => !open && setConfirmTarget(null)}
+        title="Delete this document?"
+        description="It'll be removed from this asset's document list."
+        confirmLabel="Delete"
+        variant="danger"
+        loading={confirmBusy}
+        onConfirm={confirmRemove}
+      />
     </div>
   );
 }

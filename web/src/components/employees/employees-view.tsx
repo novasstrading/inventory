@@ -6,6 +6,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { apiFetch } from "@/lib/api-client";
@@ -25,6 +26,8 @@ export function EmployeesView({ isAdmin }: { isAdmin: boolean }) {
   const [releasing, setReleasing] = React.useState<Employee | null>(null);
   const [detailOpen, setDetailOpen] = React.useState(false);
   const [detailEmployee, setDetailEmployee] = React.useState<Employee | null>(null);
+  const [reinstating, setReinstating] = React.useState<Employee | null>(null);
+  const [reinstateBusy, setReinstateBusy] = React.useState(false);
 
   const refresh = React.useCallback(async () => {
     try {
@@ -76,13 +79,18 @@ export function EmployeesView({ isAdmin }: { isAdmin: boolean }) {
     setDetailOpen(true);
   }
 
-  async function reinstate(e: Employee) {
+  async function reinstate() {
+    if (!reinstating) return;
+    setReinstateBusy(true);
     try {
-      await apiFetch(`/api/employees/${e.id}/reinstate`, { method: "POST" });
+      await apiFetch(`/api/employees/${reinstating.id}/reinstate`, { method: "POST" });
       toast.success("Employee reinstated.");
+      setReinstating(null);
       await refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not reinstate.");
+    } finally {
+      setReinstateBusy(false);
     }
   }
 
@@ -157,7 +165,7 @@ export function EmployeesView({ isAdmin }: { isAdmin: boolean }) {
                               Release
                             </Button>
                           ) : (
-                            <Button size="xs" onClick={() => reinstate(e)}>
+                            <Button size="xs" onClick={() => setReinstating(e)}>
                               Reinstate
                             </Button>
                           )}
@@ -188,6 +196,23 @@ export function EmployeesView({ isAdmin }: { isAdmin: boolean }) {
         onDone={refresh}
       />
       <EmployeeDetailSheet open={detailOpen} onOpenChange={setDetailOpen} employee={detailEmployee} assets={assets} />
+      <ConfirmDialog
+        open={!!reinstating}
+        onOpenChange={(o) => !o && setReinstating(null)}
+        title="Reinstate this employee?"
+        description={
+          reinstating ? (
+            <>
+              <b className="text-foreground">{reinstating.name}</b> will show as active again and can be assigned
+              assets.
+            </>
+          ) : null
+        }
+        confirmLabel="Reinstate"
+        variant="primary"
+        loading={reinstateBusy}
+        onConfirm={reinstate}
+      />
     </div>
   );
 }
