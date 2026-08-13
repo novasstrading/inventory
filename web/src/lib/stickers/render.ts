@@ -1,6 +1,7 @@
 "use client";
 
 import QRCode from "qrcode";
+import { withBasePath } from "@/lib/base-path";
 import type { Asset } from "@/lib/types";
 
 /**
@@ -24,6 +25,15 @@ function clip(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): st
   return t === text ? t : `${t.slice(0, -1)}…`;
 }
 
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("Could not load the Nova SS logo."));
+    img.src = src;
+  });
+}
+
 export async function renderStickerCanvas(asset: Asset, label: string): Promise<HTMLCanvasElement> {
   const SC = 4;
   const W = 340;
@@ -34,6 +44,16 @@ export async function renderStickerCanvas(asset: Asset, label: string): Promise<
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas is not supported in this browser.");
   ctx.scale(SC, SC);
+
+  const qrCanvas = document.createElement("canvas");
+  const [, logoImg] = await Promise.all([
+    QRCode.toCanvas(qrCanvas, buildQrData(asset, label), {
+      width: 96 * SC,
+      margin: 0,
+      errorCorrectionLevel: "M",
+    }),
+    loadImage(withBasePath("/logo-icon.png")),
+  ]);
 
   ctx.fillStyle = "#fff";
   ctx.fillRect(0, 0, W, H);
@@ -46,15 +66,26 @@ export async function renderStickerCanvas(asset: Asset, label: string): Promise<
   ctx.font = "700 12px Inter, system-ui, sans-serif";
   ctx.textBaseline = "middle";
   ctx.fillText("NOVA SS TRADING", 10, 16);
-  ctx.fillStyle = "#BE9646";
-  ctx.fillRect(W - 42, 13, 30, 4);
 
-  const qrCanvas = document.createElement("canvas");
-  await QRCode.toCanvas(qrCanvas, buildQrData(asset, label), {
-    width: 96 * SC,
-    margin: 0,
-    errorCorrectionLevel: "M",
-  });
+  // Logo mark, top-right of the header bar — on a white badge since the logo's
+  // navy strokes would disappear directly against the navy header background.
+  const badgeSize = 20;
+  const badgeX = W - 8 - badgeSize;
+  const badgeY = 2 + (26 - badgeSize) / 2;
+  ctx.fillStyle = "#fff";
+  ctx.beginPath();
+  ctx.roundRect(badgeX, badgeY, badgeSize, badgeSize, 4);
+  ctx.fill();
+  const pad = 3;
+  const logoAspect = logoImg.width / logoImg.height;
+  let drawW = badgeSize - pad * 2;
+  let drawH = drawW / logoAspect;
+  if (drawH > badgeSize - pad * 2) {
+    drawH = badgeSize - pad * 2;
+    drawW = drawH * logoAspect;
+  }
+  ctx.drawImage(logoImg, badgeX + (badgeSize - drawW) / 2, badgeY + (badgeSize - drawH) / 2, drawW, drawH);
+
   ctx.drawImage(qrCanvas, 10, 36, 100, 100);
 
   const x = 122;
