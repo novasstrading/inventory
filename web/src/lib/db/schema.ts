@@ -93,6 +93,15 @@ export const categories = mysqlTable("categories", {
   updatedAt: updatedTs("updated_at"),
 });
 
+// ─── locations (curated suggestion list — assets.location stays free text so
+// a one-off custom value never needs a row here) ──────────────────────────
+export const locations = mysqlTable("locations", {
+  id: id().primaryKey(),
+  name: varchar("name", { length: 200 }).notNull().unique(),
+  createdAt: ts("created_at"),
+  updatedAt: updatedTs("updated_at"),
+});
+
 // ─── code_counters (replaces codes.json) ──────────────────────────────────
 export const codeCounters = mysqlTable("code_counters", {
   tag: char("tag", { length: 2 }).primaryKey(),

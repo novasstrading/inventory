@@ -17,8 +17,9 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { apiFetch } from "@/lib/api-client";
-import type { Asset, Category, Employee } from "@/lib/types";
+import type { Asset, Category, Employee, Location } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { LocationPicker } from "./location-picker";
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
@@ -34,6 +35,8 @@ export function AssetFormDialog({
   asset,
   categories,
   employees,
+  locations,
+  onLocationsChanged,
   onSaved,
 }: {
   open: boolean;
@@ -41,6 +44,8 @@ export function AssetFormDialog({
   asset: Asset | null;
   categories: Category[];
   employees: Employee[];
+  locations: Location[];
+  onLocationsChanged: () => Promise<void> | void;
   onSaved: () => Promise<void> | void;
 }) {
   const isEdit = !!asset;
@@ -238,7 +243,13 @@ export function AssetFormDialog({
             </div>
             <div className="col-span-full mb-3">
               <Label>Location</Label>
-              <Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Baridhara office…" />
+              <LocationPicker
+                value={location}
+                onChange={setLocation}
+                locations={locations}
+                isAdmin
+                onLocationsChanged={onLocationsChanged}
+              />
             </div>
             <div className="col-span-full mb-3">
               <Label>Notes</Label>

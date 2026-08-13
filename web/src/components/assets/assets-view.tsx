@@ -14,7 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { apiFetch } from "@/lib/api-client";
 import { downloadCsv } from "@/lib/csv";
-import type { Asset, Category, Employee } from "@/lib/types";
+import type { Asset, Category, Employee, Location } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { AssetCard } from "./asset-card";
 import { AssetDetailSheet } from "./asset-detail-sheet";
@@ -27,6 +27,7 @@ export function AssetsView({ isAdmin }: { isAdmin: boolean }) {
   const [assets, setAssets] = React.useState<Asset[]>([]);
   const [categories, setCategories] = React.useState<Category[]>([]);
   const [employees, setEmployees] = React.useState<Employee[]>([]);
+  const [locations, setLocations] = React.useState<Location[]>([]);
   const [loading, setLoading] = React.useState(true);
 
   const [search, setSearch] = React.useState("");
@@ -45,14 +46,16 @@ export function AssetsView({ isAdmin }: { isAdmin: boolean }) {
 
   const refresh = React.useCallback(async () => {
     try {
-      const [assetsData, catData, empData] = await Promise.all([
+      const [assetsData, catData, empData, locData] = await Promise.all([
         apiFetch<{ assets: Asset[] }>("/api/assets"),
         apiFetch<{ categories: Category[] }>("/api/categories"),
         apiFetch<{ employees: Employee[] }>("/api/employees"),
+        apiFetch<{ locations: Location[] }>("/api/locations"),
       ]);
       setAssets(assetsData.assets);
       setCategories(catData.categories);
       setEmployees(empData.employees);
+      setLocations(locData.locations);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not load data.");
     } finally {
@@ -398,6 +401,8 @@ export function AssetsView({ isAdmin }: { isAdmin: boolean }) {
         asset={editingAsset}
         categories={categories}
         employees={employees}
+        locations={locations}
+        onLocationsChanged={refresh}
         onSaved={refresh}
       />
       <AssetDetailSheet
@@ -410,7 +415,15 @@ export function AssetsView({ isAdmin }: { isAdmin: boolean }) {
         onTransfer={openTransfer}
         onChanged={refresh}
       />
-      <TransferDialog open={transferOpen} onOpenChange={setTransferOpen} asset={transferTarget} employees={employees} onDone={refresh} />
+      <TransferDialog
+        open={transferOpen}
+        onOpenChange={setTransferOpen}
+        asset={transferTarget}
+        employees={employees}
+        locations={locations}
+        onLocationsChanged={refresh}
+        onDone={refresh}
+      />
     </div>
   );
 }

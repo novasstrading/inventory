@@ -15,6 +15,7 @@
     "db:seed": "tsx --tsconfig scripts/tsconfig.json --env-file=.env.local scripts/seed-categories.ts",
     "db:seed-admin": "tsx --tsconfig scripts/tsconfig.json --env-file=.env.local scripts/seed-admin.ts",
     "db:seed-employees": "tsx --tsconfig scripts/tsconfig.json --env-file=.env.local scripts/seed-employees.ts",
+    "db:seed-locations": "tsx --tsconfig scripts/tsconfig.json --env-file=.env.local scripts/seed-locations.ts",
     "migrate:legacy": "tsx --tsconfig scripts/tsconfig.json --env-file=.env.local scripts/migrate-legacy-data.ts"
   },
   "dependencies": {

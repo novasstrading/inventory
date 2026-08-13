@@ -15,6 +15,13 @@
       "when": 1786391351743,
       "tag": "0001_wise_rachel_grey",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1786610893574,
+      "tag": "0002_add_locations",
+      "breakpoints": true
     }
   ]
 }

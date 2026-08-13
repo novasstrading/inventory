@@ -15,19 +15,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { apiFetch } from "@/lib/api-client";
-import type { Asset, Employee } from "@/lib/types";
+import type { Asset, Employee, Location } from "@/lib/types";
+import { LocationPicker } from "./location-picker";
 
 export function TransferDialog({
   open,
   onOpenChange,
   asset,
   employees,
+  locations,
+  onLocationsChanged,
   onDone,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   asset: Asset | null;
   employees: Employee[];
+  locations: Location[];
+  onLocationsChanged: () => Promise<void> | void;
   onDone: () => Promise<void> | void;
 }) {
   const [employeeId, setEmployeeId] = React.useState("");
@@ -93,7 +98,14 @@ export function TransferDialog({
           </div>
           <div className="mb-3">
             <Label>New location (optional)</Label>
-            <Input value={toLocation} onChange={(e) => setToLocation(e.target.value)} placeholder="e.g. Conference room" />
+            <LocationPicker
+              value={toLocation}
+              onChange={setToLocation}
+              locations={locations}
+              isAdmin
+              onLocationsChanged={onLocationsChanged}
+              blankLabel="— Keep current location —"
+            />
           </div>
           <div className="mb-3">
             <Label>Notes (optional)</Label>

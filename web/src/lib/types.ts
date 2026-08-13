@@ -60,6 +60,11 @@ export type Category = {
   codeTag: string | null;
 };
 
+export type Location = {
+  id: string;
+  name: string;
+};
+
 export type Employee = {
   id: string;
   name: string;
