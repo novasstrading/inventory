@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -18,6 +19,8 @@ export function AccessView() {
   const [email, setEmail] = React.useState("");
   const [role, setRole] = React.useState<"admin" | "viewer">("viewer");
   const [adding, setAdding] = React.useState(false);
+  const [removing, setRemoving] = React.useState<AdminUser | null>(null);
+  const [removeBusy, setRemoveBusy] = React.useState(false);
 
   const refresh = React.useCallback(async () => {
     try {
@@ -50,14 +53,18 @@ export function AccessView() {
     }
   }
 
-  async function removeUser(u: AdminUser) {
-    if (!confirm(`Remove access for ${u.email}? They'll be notified and signed out.`)) return;
+  async function removeUser() {
+    if (!removing) return;
+    setRemoveBusy(true);
     try {
-      await apiFetch(`/api/admin/users/${u.id}/remove`, { method: "POST" });
+      await apiFetch(`/api/admin/users/${removing.id}/remove`, { method: "POST" });
       toast.success("User removed.");
+      setRemoving(null);
       await refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not remove user.");
+    } finally {
+      setRemoveBusy(false);
     }
   }
 
@@ -88,7 +95,7 @@ export function AccessView() {
                   {u.protected ? (
                     <span className="text-xs text-muted-foreground">server admin</span>
                   ) : (
-                    <Button variant="danger" size="xs" onClick={() => removeUser(u)}>
+                    <Button variant="danger" size="xs" onClick={() => setRemoving(u)}>
                       Remove
                     </Button>
                   )}
@@ -128,6 +135,22 @@ export function AccessView() {
           </p>
         </div>
       </Card>
+      <ConfirmDialog
+        open={!!removing}
+        onOpenChange={(open) => !open && setRemoving(null)}
+        title="Remove access?"
+        description={
+          removing ? (
+            <>
+              Remove access for <b className="text-foreground">{removing.email}</b>? They&apos;ll be notified and
+              signed out.
+            </>
+          ) : null
+        }
+        confirmLabel="Remove"
+        loading={removeBusy}
+        onConfirm={removeUser}
+      />
     </div>
   );
 }

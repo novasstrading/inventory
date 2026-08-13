@@ -4,6 +4,7 @@ import * as React from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Sheet, SheetBody, SheetClose, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { apiFetch } from "@/lib/api-client";
 import type { Asset, Employee, Transfer } from "@/lib/types";
@@ -57,6 +58,7 @@ export function AssetDetailSheet({
   const [transfers, setTransfers] = React.useState<Transfer[]>([]);
   const [busy, setBusy] = React.useState(false);
   const [stickerOpen, setStickerOpen] = React.useState(false);
+  const [confirmRemoveOpen, setConfirmRemoveOpen] = React.useState(false);
 
   React.useEffect(() => {
     if (!open || !asset) return;
@@ -68,19 +70,26 @@ export function AssetDetailSheet({
   if (!asset) return null;
   const holder = employees.find((e) => e.id === asset.employeeId)?.name ?? "Office";
 
-  async function toggleRemoved() {
-    const restore = asset!.status === "removed";
-    if (!restore && !confirm("Mark this asset as removed? Its sticker code stays reserved forever.")) return;
+  async function doRemove(restore: boolean) {
     setBusy(true);
     try {
       await apiFetch(`/api/assets/${asset!.id}/remove`, { method: "POST", body: { restore } });
       toast.success(restore ? "Restored." : "Removed.");
+      setConfirmRemoveOpen(false);
       await onChanged();
       onOpenChange(false);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not update.");
     } finally {
       setBusy(false);
+    }
+  }
+
+  function toggleRemoved() {
+    if (asset!.status === "removed") {
+      doRemove(true);
+    } else {
+      setConfirmRemoveOpen(true);
     }
   }
 
@@ -191,6 +200,15 @@ export function AssetDetailSheet({
         </SheetBody>
       </SheetContent>
       <StickerDialog open={stickerOpen} onOpenChange={setStickerOpen} asset={asset} isAdmin={isAdmin} />
+      <ConfirmDialog
+        open={confirmRemoveOpen}
+        onOpenChange={setConfirmRemoveOpen}
+        title="Mark this asset as removed?"
+        description="Its sticker code stays reserved forever and can't be reused, even after removal."
+        confirmLabel="Remove"
+        loading={busy}
+        onConfirm={() => doRemove(false)}
+      />
     </Sheet>
   );
 }

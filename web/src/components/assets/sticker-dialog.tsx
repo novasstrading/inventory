@@ -79,6 +79,7 @@ export function StickerDialog({
   const [newLabel, setNewLabel] = React.useState("");
   const [generating, setGenerating] = React.useState(false);
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = React.useState(false);
   const [confirmingGenerate, setConfirmingGenerate] = React.useState(false);
 
   const load = React.useCallback(async () => {
@@ -103,9 +104,11 @@ export function StickerDialog({
   React.useEffect(() => {
     if (!open || !asset || !newLabel.trim()) {
       setPreviewUrl(null);
+      setPreviewLoading(false);
       return;
     }
     let cancelled = false;
+    setPreviewLoading(true);
     const timer = setTimeout(async () => {
       try {
         const canvas = await renderStickerCanvas(asset, newLabel.trim());
@@ -113,6 +116,8 @@ export function StickerDialog({
         setPreviewUrl(canvas.toDataURL("image/png"));
       } catch {
         if (!cancelled) setPreviewUrl(null);
+      } finally {
+        if (!cancelled) setPreviewLoading(false);
       }
     }, 350);
     return () => {
@@ -220,11 +225,15 @@ export function StickerDialog({
                     </div>
                   )}
                 </div>
-                {previewUrl && (
+                {(previewUrl || previewLoading) && (
                   <div className="flex flex-none flex-col items-center gap-1.5">
                     <div className="rounded-lg border border-border bg-white p-1.5 shadow-[0_4px_16px_rgba(16,26,38,.12)] [transform:rotate(-1deg)]">
-                      {/* eslint-disable-next-line @next/next/no-img-element -- data URL preview, not an app asset */}
-                      <img src={previewUrl} alt="Sticker preview" className="block h-[66px] w-[150px] object-contain" />
+                      {previewUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element -- data URL preview, not an app asset
+                        <img src={previewUrl} alt="Sticker preview" className="block h-[66px] w-[150px] object-contain" />
+                      ) : (
+                        <Skeleton className="block h-[66px] w-[150px]" />
+                      )}
                     </div>
                     <span className="text-[10px] text-muted-foreground">Preview · 340×150 print size</span>
                   </div>

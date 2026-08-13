@@ -3,10 +3,20 @@
 import * as React from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api-client";
 import { withBasePath } from "@/lib/base-path";
+import { MAX_FILE_BYTES, MAX_FILE_MB } from "@/lib/storage/constants";
 import type { Doc, Photo } from "@/lib/types";
 import { cn } from "@/lib/utils";
+
+function checkFileSize(file: File): boolean {
+  if (file.size > MAX_FILE_BYTES) {
+    toast.error(`${file.name} is too large (max ${MAX_FILE_MB} MB).`);
+    return false;
+  }
+  return true;
+}
 
 /** `url` is app-relative (e.g. "/api/assets/x/photos/y") — this component applies the basePath. */
 function Thumb({ url, alt, isPdf, label }: { url: string; alt: string; isPdf: boolean; label?: string }) {
@@ -39,13 +49,55 @@ function Thumb({ url, alt, isPdf, label }: { url: string; alt: string; isPdf: bo
     // eslint-disable-next-line @next/next/no-img-element -- authenticated proxy blob URL
     <img src={src} alt={alt} className="h-full w-full object-cover" loading="lazy" />
   ) : (
-    <div className="flex h-full items-center justify-center text-xs text-muted-foreground">…</div>
+    <Skeleton className="h-full w-full rounded-none" />
+  );
+}
+
+function UploadButton({
+  label,
+  accept,
+  uploading,
+  onSelect,
+}: {
+  label: string;
+  accept: string;
+  uploading: boolean;
+  onSelect: (file: File) => void;
+}) {
+  return (
+    <label
+      className={cn(
+        "flex cursor-pointer items-center gap-1.5 rounded-md bg-navy px-2.5 py-1 text-[11.5px] font-semibold text-white transition-opacity",
+        uploading && "pointer-events-none opacity-70",
+      )}
+    >
+      {uploading ? (
+        <>
+          <span className="size-3 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+          Uploading…
+        </>
+      ) : (
+        label
+      )}
+      <input
+        type="file"
+        accept={accept}
+        className="hidden"
+        disabled={uploading}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          e.target.value = "";
+          if (file) onSelect(file);
+        }}
+      />
+    </label>
   );
 }
 
 export function PhotoGallery({ assetId, isAdmin }: { assetId: string; isAdmin: boolean }) {
   const [photos, setPhotos] = React.useState<Photo[]>([]);
   const [showDeleted, setShowDeleted] = React.useState(false);
+  const [uploading, setUploading] = React.useState(false);
 
   const load = React.useCallback(async () => {
     try {
@@ -62,6 +114,8 @@ export function PhotoGallery({ assetId, isAdmin }: { assetId: string; isAdmin: b
 
   async function upload(file: File) {
     if (!file.size) return toast.error("That file is empty.");
+    if (!checkFileSize(file)) return;
+    setUploading(true);
     const fd = new FormData();
     fd.append("photo", file, file.name);
     try {
@@ -72,6 +126,8 @@ export function PhotoGallery({ assetId, isAdmin }: { assetId: string; isAdmin: b
       await load();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not upload photo.");
+    } finally {
+      setUploading(false);
     }
   }
 
@@ -95,10 +151,7 @@ export function PhotoGallery({ assetId, isAdmin }: { assetId: string; isAdmin: b
             <Button variant="ghost" size="xs" onClick={() => setShowDeleted((s) => !s)}>
               {showDeleted ? "Hide deleted" : "Show deleted"}
             </Button>
-            <label className="cursor-pointer rounded-md bg-navy px-2.5 py-1 text-[11.5px] font-semibold text-white">
-              + Photo
-              <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
-            </label>
+            <UploadButton label="+ Photo" accept="image/*" uploading={uploading} onSelect={upload} />
           </div>
         )}
       </div>
@@ -129,6 +182,7 @@ export function PhotoGallery({ assetId, isAdmin }: { assetId: string; isAdmin: b
 
 export function DocumentGallery({ assetId, isAdmin }: { assetId: string; isAdmin: boolean }) {
   const [docs, setDocs] = React.useState<Doc[]>([]);
+  const [uploading, setUploading] = React.useState(false);
 
   const load = React.useCallback(async () => {
     try {
@@ -145,6 +199,8 @@ export function DocumentGallery({ assetId, isAdmin }: { assetId: string; isAdmin
 
   async function upload(file: File) {
     if (!file.size) return toast.error("That file is empty.");
+    if (!checkFileSize(file)) return;
+    setUploading(true);
     const fd = new FormData();
     fd.append("doc", file, file.name);
     try {
@@ -155,6 +211,8 @@ export function DocumentGallery({ assetId, isAdmin }: { assetId: string; isAdmin
       await load();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not upload document.");
+    } finally {
+      setUploading(false);
     }
   }
 
@@ -171,17 +229,7 @@ export function DocumentGallery({ assetId, isAdmin }: { assetId: string; isAdmin
     <div className="mt-6 border-t border-border pt-4">
       <div className="mb-2.5 flex items-center justify-between">
         <div className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Documents / Invoices</div>
-        {isAdmin && (
-          <label className="cursor-pointer rounded-md bg-navy px-2.5 py-1 text-[11.5px] font-semibold text-white">
-            + PDF / Image
-            <input
-              type="file"
-              accept=".pdf,image/*"
-              className="hidden"
-              onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])}
-            />
-          </label>
-        )}
+        {isAdmin && <UploadButton label="+ PDF / Image" accept=".pdf,image/*" uploading={uploading} onSelect={upload} />}
       </div>
       {docs.length === 0 ? (
         <div className="text-sm text-muted-foreground">No documents yet.</div>

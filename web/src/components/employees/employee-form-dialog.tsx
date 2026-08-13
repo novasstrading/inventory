@@ -16,7 +16,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiFetch } from "@/lib/api-client";
 import { withBasePath } from "@/lib/base-path";
+import { MAX_FILE_BYTES, MAX_FILE_MB } from "@/lib/storage/constants";
 import type { Employee } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 export function EmployeeFormDialog({
   open,
@@ -36,6 +38,7 @@ export function EmployeeFormDialog({
   const [email, setEmail] = React.useState(employee?.email ?? "");
   const [saving, setSaving] = React.useState(false);
   const [photoNonce, setPhotoNonce] = React.useState(0);
+  const [uploadingPhoto, setUploadingPhoto] = React.useState(false);
 
   React.useEffect(() => {
     if (!open) return;
@@ -69,6 +72,8 @@ export function EmployeeFormDialog({
   async function uploadPhoto(file: File) {
     if (!employee) return;
     if (!file.size) return toast.error("Empty file.");
+    if (file.size > MAX_FILE_BYTES) return toast.error(`Photo is too large (max ${MAX_FILE_MB} MB).`);
+    setUploadingPhoto(true);
     const fd = new FormData();
     fd.append("photo", file, file.name);
     try {
@@ -81,6 +86,8 @@ export function EmployeeFormDialog({
       await onSaved();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not upload photo.");
+    } finally {
+      setUploadingPhoto(false);
     }
   }
 
@@ -94,13 +101,30 @@ export function EmployeeFormDialog({
           {isEdit && (
             <div className="mb-4.5 flex items-center gap-3.5">
               <Avatar name={employee.name} photoUrl={employee.photoKey ? `/api/employees/${employee.id}/photo?v=${photoNonce}` : null} size="lg" />
-              <label className="cursor-pointer rounded-md border border-input px-3 py-1.5 text-sm font-semibold text-navy hover:bg-muted">
-                📷 Change photo
+              <label
+                className={cn(
+                  "cursor-pointer rounded-md border border-input px-3 py-1.5 text-sm font-semibold text-navy hover:bg-muted",
+                  uploadingPhoto && "pointer-events-none opacity-60",
+                )}
+              >
+                {uploadingPhoto ? (
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="size-3 animate-spin rounded-full border-2 border-navy/30 border-t-navy" />
+                    Uploading…
+                  </span>
+                ) : (
+                  "📷 Change photo"
+                )}
                 <input
                   type="file"
                   accept="image/*"
                   className="hidden"
-                  onChange={(e) => e.target.files?.[0] && uploadPhoto(e.target.files[0])}
+                  disabled={uploadingPhoto}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = "";
+                    if (file) uploadPhoto(file);
+                  }}
                 />
               </label>
             </div>

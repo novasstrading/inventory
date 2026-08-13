@@ -1,4 +1,5 @@
-export const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10 MB, matches legacy limit
+export const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB
+export const MAX_FILE_MB = MAX_FILE_BYTES / (1024 * 1024);
 export const ALLOWED_PHOTO_EXT = ["jpg", "jpeg", "png", "webp", "gif"];
 export const ALLOWED_DOC_EXT = ["pdf", "jpg", "jpeg", "png", "webp", "gif"];
 
