@@ -9,32 +9,31 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { apiFetch } from "@/lib/api-client";
-import type { Employee } from "@/lib/types";
+import type { Asset, Employee } from "@/lib/types";
+import { EmployeeDetailSheet } from "./employee-detail-sheet";
 import { EmployeeFormDialog } from "./employee-form-dialog";
 import { ReleaseEmployeeDialog } from "./release-employee-dialog";
 
 export function EmployeesView({ isAdmin }: { isAdmin: boolean }) {
   const [employees, setEmployees] = React.useState<Employee[]>([]);
+  const [assets, setAssets] = React.useState<Asset[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [search, setSearch] = React.useState("");
   const [formOpen, setFormOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<Employee | null>(null);
   const [releaseOpen, setReleaseOpen] = React.useState(false);
   const [releasing, setReleasing] = React.useState<Employee | null>(null);
-  const [heldCounts, setHeldCounts] = React.useState<Record<string, number>>({});
+  const [detailOpen, setDetailOpen] = React.useState(false);
+  const [detailEmployee, setDetailEmployee] = React.useState<Employee | null>(null);
 
   const refresh = React.useCallback(async () => {
     try {
       const [empData, assetData] = await Promise.all([
         apiFetch<{ employees: Employee[] }>("/api/employees"),
-        apiFetch<{ assets: Array<{ employeeId: string | null; status: string }> }>("/api/assets"),
+        apiFetch<{ assets: Asset[] }>("/api/assets"),
       ]);
       setEmployees(empData.employees);
-      const counts: Record<string, number> = {};
-      for (const a of assetData.assets) {
-        if (a.employeeId && a.status === "active") counts[a.employeeId] = (counts[a.employeeId] ?? 0) + 1;
-      }
-      setHeldCounts(counts);
+      setAssets(assetData.assets);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not load employees.");
     } finally {
@@ -45,6 +44,14 @@ export function EmployeesView({ isAdmin }: { isAdmin: boolean }) {
   React.useEffect(() => {
     refresh();
   }, [refresh]);
+
+  const heldCounts = React.useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const a of assets) {
+      if (a.employeeId && a.status === "active") counts[a.employeeId] = (counts[a.employeeId] ?? 0) + 1;
+    }
+    return counts;
+  }, [assets]);
 
   const filtered = React.useMemo(() => {
     const q = search.toLowerCase().trim();
@@ -63,6 +70,10 @@ export function EmployeesView({ isAdmin }: { isAdmin: boolean }) {
   function openRelease(e: Employee) {
     setReleasing(e);
     setReleaseOpen(true);
+  }
+  function openDetail(e: Employee) {
+    setDetailEmployee(e);
+    setDetailOpen(true);
   }
 
   async function reinstate(e: Employee) {
@@ -112,17 +123,22 @@ export function EmployeesView({ isAdmin }: { isAdmin: boolean }) {
                 return (
                   <TableRow key={e.id}>
                     <TableCell>
-                      <div className="flex items-center gap-2.5">
+                      <button className="flex items-center gap-2.5 text-left" onClick={() => openDetail(e)}>
                         <Avatar name={e.name} photoUrl={e.photoKey ? `/api/employees/${e.id}/photo` : null} />
                         <div>
-                          <div className="font-semibold">{e.name}</div>
+                          <div className="font-semibold text-ink hover:text-navy hover:underline">{e.name}</div>
+                          {held > 0 && !needsAttention && (
+                            <div className="mt-0.5 text-[11px] text-muted-foreground">
+                              Holding {held} asset{held === 1 ? "" : "s"}
+                            </div>
+                          )}
                           {needsAttention && (
                             <div className="mt-0.5 text-[11px] font-semibold text-danger">
                               {held} asset{held === 1 ? "" : "s"} need reassignment
                             </div>
                           )}
                         </div>
-                      </div>
+                      </button>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">{e.designation || <span className="text-muted-foreground">—</span>}</TableCell>
                     <TableCell className="hidden sm:table-cell">{e.contact || <span className="text-muted-foreground">—</span>}</TableCell>
@@ -167,9 +183,11 @@ export function EmployeesView({ isAdmin }: { isAdmin: boolean }) {
         open={releaseOpen}
         onOpenChange={setReleaseOpen}
         employee={releasing}
-        heldCount={releasing ? heldCounts[releasing.id] ?? 0 : 0}
+        heldAssets={releasing ? assets.filter((a) => a.employeeId === releasing.id && a.status === "active") : []}
+        employees={employees}
         onDone={refresh}
       />
+      <EmployeeDetailSheet open={detailOpen} onOpenChange={setDetailOpen} employee={detailEmployee} assets={assets} />
     </div>
   );
 }

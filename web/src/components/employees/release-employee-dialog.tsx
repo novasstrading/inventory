@@ -13,44 +13,56 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { apiFetch } from "@/lib/api-client";
-import type { Employee } from "@/lib/types";
+import type { Asset, Employee } from "@/lib/types";
 
 export function ReleaseEmployeeDialog({
   open,
   onOpenChange,
   employee,
-  heldCount,
+  heldAssets,
+  employees,
   onDone,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   employee: Employee | null;
-  heldCount: number;
+  /** Assets currently assigned to this employee — each must be resolved before release. */
+  heldAssets: Asset[];
+  employees: Employee[];
   onDone: () => Promise<void> | void;
 }) {
   const [note, setNote] = React.useState("");
-  const [reassign, setReassign] = React.useState(true);
+  // assetId -> destination employeeId ("" = Office)
+  const [destinations, setDestinations] = React.useState<Record<string, string>>({});
   const [saving, setSaving] = React.useState(false);
 
   React.useEffect(() => {
     if (open) {
       setNote("");
-      setReassign(true);
+      setDestinations(Object.fromEntries(heldAssets.map((a) => [a.id, ""])));
     }
-  }, [open]);
+    // heldAssets is a fresh array every render from the parent's filter() — only reset on open.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, employee?.id]);
 
   if (!employee) return null;
+
+  const otherEmployees = employees.filter((e) => e.status === "active" && e.id !== employee.id);
 
   async function submit() {
     setSaving(true);
     try {
       const data = await apiFetch<{ reassignedCount: number }>(`/api/employees/${employee!.id}/release`, {
-        body: { note, reassignAssetsToOffice: reassign },
+        body: {
+          note,
+          reassignments: heldAssets.map((a) => ({ assetId: a.id, employeeId: destinations[a.id] ?? "" })),
+        },
       });
       toast.success(
         data.reassignedCount > 0
-          ? `Released — ${data.reassignedCount} asset(s) returned to Office.`
+          ? `Released — ${data.reassignedCount} asset(s) reassigned.`
           : "Employee released.",
       );
       onOpenChange(false);
@@ -73,25 +85,38 @@ export function ReleaseEmployeeDialog({
             This marks them as released (reversible — see the Reinstate action later) rather than deleting their
             record, so asset history stays intact.
           </p>
-          {heldCount > 0 && (
-            <div className="mb-3.5 rounded-md bg-gold-soft px-3.5 py-2.5 text-[13px] text-ink-2">
-              Currently holding <b>{heldCount}</b> asset{heldCount === 1 ? "" : "s"}.
+
+          {heldAssets.length > 0 && (
+            <div className="mb-4">
+              <div className="mb-2 rounded-md bg-gold-soft px-3.5 py-2.5 text-[13px] text-ink-2">
+                Currently holding <b>{heldAssets.length}</b> asset{heldAssets.length === 1 ? "" : "s"} — choose where
+                each one goes before releasing.
+              </div>
+              <div className="flex flex-col gap-2.5">
+                {heldAssets.map((a) => (
+                  <div key={a.id} className="rounded-md border border-border p-2.5">
+                    <div className="mb-1.5 text-[13px]">
+                      {a.code && <span className="mr-1.5 font-mono text-[11.5px] font-bold text-navy">{a.code}</span>}
+                      <span className="font-semibold text-ink">{a.name}</span>
+                    </div>
+                    <Select
+                      value={destinations[a.id] ?? ""}
+                      onChange={(e) => setDestinations((prev) => ({ ...prev, [a.id]: e.target.value }))}
+                    >
+                      <option value="">🏢 Return to Office</option>
+                      {otherEmployees.map((e) => (
+                        <option key={e.id} value={e.id}>
+                          Transfer to {e.name}
+                          {e.designation ? ` — ${e.designation}` : ""}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
-          <label className="mb-3.5 flex items-start gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={reassign}
-              onChange={(e) => setReassign(e.target.checked)}
-              className="mt-0.5"
-            />
-            <span>
-              Return their assets to Office automatically
-              <div className="text-xs text-muted-foreground">
-                Unchecked: assets stay assigned to {employee.name} and are flagged for manual reassignment.
-              </div>
-            </span>
-          </label>
+
           <div className="mb-1">
             <Label>Note (optional)</Label>
             <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Reason for release…" />

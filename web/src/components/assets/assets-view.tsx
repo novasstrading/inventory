@@ -292,8 +292,12 @@ export function AssetsView({ isAdmin }: { isAdmin: boolean }) {
         {pageSlice.length === 0 && <Card>{emptyStateBlock}</Card>}
       </div>
 
-      {/* desktop: table */}
-      <Card className="hidden overflow-hidden sm:block">
+      {/* desktop: table — no overflow-hidden here: an ancestor with non-visible
+          overflow becomes the sticky positioning context, and since this Card
+          never scrolls itself, that broke the sticky header (it rendered
+          pinned inside the card's own box instead of the page viewport,
+          overlapping rows). overflow-x-auto below still clips/scrolls fine. */}
+      <Card className="hidden sm:block">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader className="sticky top-[60px] z-10 bg-panel">

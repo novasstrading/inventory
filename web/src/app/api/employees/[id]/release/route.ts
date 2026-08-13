@@ -13,7 +13,7 @@ export const POST = withApiErrors(async (request: NextRequest, ctx: RouteContext
   const input = employeeReleaseSchema.parse({ ...body, id });
   const { employee, reassignedCount } = await releaseEmployee(
     id,
-    { note: input.note, reassignAssetsToOffice: input.reassignAssetsToOffice },
+    { note: input.note, reassignments: input.reassignments },
     { userId: session.userId, email: session.email },
   );
   return ok({ employee, reassignedCount });

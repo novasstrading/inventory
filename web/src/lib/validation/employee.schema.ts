@@ -16,6 +16,11 @@ export type EmployeeUpdateInput = z.infer<typeof employeeUpdateSchema>;
 export const employeeReleaseSchema = z.object({
   id: z.string().min(1),
   note: optionalText(500),
-  // What to do with assets currently assigned to this employee.
-  reassignAssetsToOffice: z.boolean().optional().default(true),
+  // Destination for each asset currently assigned to this employee — every
+  // held asset must be resolved to Office (empty employeeId) or another
+  // employee before the release can complete.
+  reassignments: z
+    .array(z.object({ assetId: z.string().min(1), employeeId: optionalText(26) }))
+    .optional()
+    .default([]),
 });
