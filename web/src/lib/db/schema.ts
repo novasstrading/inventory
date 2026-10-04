@@ -41,6 +41,8 @@ export const users = mysqlTable("users", {
   // bootstrap admin — can't be removed via the Access UI, replaces hand-editing users.php
   protected: boolean("protected").notNull().default(false),
   status: mysqlEnum("status", ["active", "revoked"]).notNull().default("active"),
+  // CSV of module keys this user may open under /admin — see lib/auth/modules.ts
+  modules: varchar("modules", { length: 64 }).notNull().default("assets"),
   createdBy: id("created_by").references((): AnyMySqlColumn => users.id),
   createdAt: ts("created_at"),
   updatedAt: updatedTs("updated_at"),

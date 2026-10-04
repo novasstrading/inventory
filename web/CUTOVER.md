@@ -61,6 +61,10 @@ proxies one path prefix to it. The browser only ever sees `novasstrading.com`
 **In this repo** (`web/`), already wired to read these at build time:
 - `NEXT_PUBLIC_BASE_PATH=/admin/inventory`
 - `NEXT_PUBLIC_APP_URL=https://novasstrading.com/admin/inventory`
+- `NEXT_PUBLIC_ADMIN_LOGIN_URL=/admin/login` — only when the shared `/admin`
+  door (website-editor app) owns sign-in; hands login/sign-out off to it.
+  Leave unset to keep this app's own `/login`. Requires migration
+  `0003_add_user_modules` (adds `users.modules`; admins get `website,assets`).
 
 **In the main novasstrading.com repo**, add to `next.config.js`:
 ```js

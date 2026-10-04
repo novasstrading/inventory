@@ -10,6 +10,10 @@ import { eq } from "drizzle-orm";
 import { db } from "../src/lib/db/client";
 import { newId } from "../src/lib/db/ids";
 import { users } from "../src/lib/db/schema";
+import { defaultModulesForRole, formatModules } from "../src/lib/auth/modules";
+
+// Protected admins always get every module (website editor + assets).
+const ADMIN_MODULES = formatModules(defaultModulesForRole("admin"));
 
 async function main() {
   const email = (process.argv[2] ?? "").trim().toLowerCase();
@@ -21,7 +25,10 @@ async function main() {
   const existing = await db.query.users.findFirst({ where: eq(users.email, email) });
   if (existing) {
     if (!existing.protected) {
-      await db.update(users).set({ protected: true, role: "admin", status: "active" }).where(eq(users.id, existing.id));
+      await db
+        .update(users)
+        .set({ protected: true, role: "admin", status: "active", modules: ADMIN_MODULES })
+        .where(eq(users.id, existing.id));
       console.log(`${email} already existed — promoted to protected admin.`);
     } else {
       console.log(`${email} is already a protected admin. Nothing to do.`);
@@ -34,6 +41,7 @@ async function main() {
     id: newId(),
     email,
     role: "admin",
+    modules: ADMIN_MODULES,
     protected: true,
     status: "active",
     createdAt: now,

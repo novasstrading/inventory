@@ -4,11 +4,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { ChevronDownIcon, LogOutIcon, UserIcon } from "lucide-react";
+import { ChevronDownIcon, HomeIcon, LogOutIcon, UserIcon } from "lucide-react";
 import { withBasePath } from "@/lib/base-path";
 import { cn } from "@/lib/utils";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { SignOutButton } from "./sign-out-button";
+
+// Set only when mounted behind the shared /admin door (see .env.example).
+const MOUNTED = Boolean(process.env.NEXT_PUBLIC_ADMIN_LOGIN_URL);
 
 const TABS = [
   { href: "/assets", label: "Assets", icon: "📦" },
@@ -100,6 +103,19 @@ export function DashboardHeader({ email, role }: { email: string; role: "admin" 
             </span>
           </div>
           <div className="my-1 border-t border-border" />
+          {MOUNTED && (
+            <div className="px-1.5">
+              {/* Plain <a>: /admin is outside this app's basePath, so next/link would mis-prefix it. */}
+              <a
+                href="/admin"
+                role="menuitem"
+                className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-[13px] font-semibold text-ink-2 transition-colors hover:bg-muted"
+              >
+                <HomeIcon className="size-3.5" />
+                Admin home
+              </a>
+            </div>
+          )}
           <div className="px-1.5 pb-1.5">
             <SignOutButton className="flex w-full items-center justify-start gap-2 rounded-md border-0 bg-transparent px-2 py-2 text-[13px] font-semibold text-danger hover:bg-danger-bg hover:text-danger">
               <LogOutIcon className="size-3.5" />

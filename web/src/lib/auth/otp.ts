@@ -5,6 +5,7 @@ import { db } from "@/lib/db/client";
 import { otpCodes, rateLimits, users } from "@/lib/db/schema";
 import { sendOtpEmail } from "@/lib/email/brevo";
 import { TooManyRequestsError, ValidationError } from "./errors";
+import { parseModules, type ModuleKey } from "./modules";
 
 export const OTP_LENGTH = 6;
 export const OTP_TTL_MIN = 10;
@@ -88,7 +89,7 @@ export async function requestOtp(email: string, ip: string): Promise<void> {
   await sendOtpEmail(normalized, code, OTP_TTL_MIN);
 }
 
-export type VerifiedUser = { id: string; email: string; role: "admin" | "viewer" };
+export type VerifiedUser = { id: string; email: string; role: "admin" | "viewer"; modules: ModuleKey[] };
 
 export async function verifyOtp(email: string, code: string): Promise<VerifiedUser> {
   const normalized = normalizeEmail(email);
@@ -117,5 +118,5 @@ export async function verifyOtp(email: string, code: string): Promise<VerifiedUs
   await db.delete(otpCodes).where(eq(otpCodes.email, normalized));
   const user = await findActiveUserByEmail(normalized);
   if (!user) throw new ValidationError("This email is not authorized.");
-  return { id: user.id, email: user.email, role: user.role };
+  return { id: user.id, email: user.email, role: user.role, modules: parseModules(user.modules) };
 }

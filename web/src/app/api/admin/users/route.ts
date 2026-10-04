@@ -15,6 +15,11 @@ export const GET = withApiErrors(async () => {
 export const POST = withApiErrors(async (request: NextRequest) => {
   const session = await requireAdmin();
   const input = userAddSchema.parse(await request.json());
-  const user = await addUser(input.email, input.role, { email: session.email, userId: session.userId });
+  const user = await addUser(
+    input.email,
+    input.role,
+    { email: session.email, userId: session.userId },
+    input.modules,
+  );
   return ok({ user }, { status: 201 });
 });

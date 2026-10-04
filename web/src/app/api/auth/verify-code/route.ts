@@ -14,5 +14,5 @@ export const POST = withApiErrors(async (request: NextRequest) => {
     userAgent: request.headers.get("user-agent"),
     ip: getClientIp(request),
   });
-  return ok({ email: user.email, role: user.role });
+  return ok({ email: user.email, role: user.role, modules: user.modules });
 });

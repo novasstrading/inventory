@@ -5,6 +5,9 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api-client";
 
+// Mounted behind the shared /admin door: sign-out lands on its login, outside this app's basePath.
+const ADMIN_LOGIN_URL = process.env.NEXT_PUBLIC_ADMIN_LOGIN_URL;
+
 export function SignOutButton({ className, children }: { className?: string; children?: React.ReactNode }) {
   const router = useRouter();
   const [loading, setLoading] = React.useState(false);
@@ -14,8 +17,12 @@ export function SignOutButton({ className, children }: { className?: string; chi
     try {
       await apiFetch("/api/auth/logout", { method: "POST" });
     } finally {
-      router.push("/login");
-      router.refresh();
+      if (ADMIN_LOGIN_URL) {
+        window.location.assign(ADMIN_LOGIN_URL);
+      } else {
+        router.push("/login");
+        router.refresh();
+      }
     }
   }
 
