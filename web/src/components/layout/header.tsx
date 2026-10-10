@@ -8,6 +8,7 @@ import { ChevronDownIcon, HomeIcon, LogOutIcon, UserIcon } from "lucide-react";
 import { withBasePath } from "@/lib/base-path";
 import { cn } from "@/lib/utils";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { MountedHeader } from "./mounted-header";
 import { SignOutButton } from "./sign-out-button";
 
 // Set only when mounted behind the shared /admin door (see .env.example).
@@ -61,9 +62,20 @@ function NavLinks({
   );
 }
 
-export function DashboardHeader({ email, role }: { email: string; role: "admin" | "viewer" }) {
+export function DashboardHeader({
+  email,
+  role,
+  modules = [],
+}: {
+  email: string;
+  role: "admin" | "viewer";
+  modules?: string[];
+}) {
   const pathname = usePathname();
   const tabs = role === "admin" ? [...TABS, { href: "/admin/access", label: "Access", icon: "🔑" }] : TABS;
+
+  // Behind the shared /admin door the header matches the other admin modules.
+  if (MOUNTED) return <><MountedHeader email={email} role={role} modules={modules} />{/* mobile bottom tab bar */}<nav className="fixed inset-x-0 bottom-0 z-40 flex justify-around gap-1.5 border-t border-line bg-panel p-1.5 shadow-[0_-2px_12px_rgba(0,0,0,.08)] sm:hidden"><NavLinks tabs={tabs} pathname={pathname} layoutId="mobile-nav-pill" mobile /></nav></>;
 
   return (
     <header className="glass sticky top-0 z-50 flex h-[60px] items-center gap-3.5 px-4.5 text-white shadow-[0_1px_0_rgba(255,255,255,.06),0_4px_20px_rgba(0,0,0,.15)]">
